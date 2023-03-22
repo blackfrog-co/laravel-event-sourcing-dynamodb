@@ -14,6 +14,8 @@ class LaravelEventSourcingDynamodbServiceProvider extends PackageServiceProvider
     {
         parent::register();
 
+        $this->app->singleton(IdGenerator::class);
+
         $dynamoDbClient = function () {
             return new DynamoDbClient(config('event-sourcing-dynamodb.dynamodb-client'));
         };

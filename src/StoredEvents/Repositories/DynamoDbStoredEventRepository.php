@@ -4,6 +4,7 @@ namespace BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\Repositories;
 
 use Aws\DynamoDb\DynamoDbClient;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGenerator;
+use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\StoredEventFactory;
 use Illuminate\Support\LazyCollection;
 use Spatie\EventSourcing\StoredEvents\Repositories\StoredEventRepository;
 use Spatie\EventSourcing\StoredEvents\ShouldBeStored;
@@ -11,13 +12,14 @@ use Spatie\EventSourcing\StoredEvents\StoredEvent;
 
 class DynamoDbStoredEventRepository implements StoredEventRepository
 {
-    protected string $storedEventTable;
+    protected string $table;
 
     public function __construct(
-        private DynamoDbClient $dynamoDbClient,
-        private IdGenerator $idGenerator
+        private DynamoDbClient $dynamo,
+        private IdGenerator    $idGenerator,
+        private StoredEventFactory $storedEventFactory,
     ) {
-        $this->storedEventTable = (string) config(
+        $this->table = (string) config(
             'event-sourcing-dynamodb.stored_event_table',
             'stored_events'
         );
@@ -25,6 +27,15 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function find(int $id): StoredEvent
     {
+        $dynamoData = $this->dynamo->getItem([
+            'TableName' => $this->table,
+            'ConsistentRead' => false,
+            'Key' => [
+                'id' => [
+                    'N' => $id,
+                ],
+            ],
+        ]);
     }
 
     public function retrieveAll(string $uuid = null): LazyCollection
@@ -49,7 +60,8 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function persist(ShouldBeStored $event, string $uuid = null): StoredEvent
     {
-        // TODO: Implement persist() method.
+        $id = $this->idGenerator->generateId();
+
     }
 
     public function persistMany(array $events, string $uuid = null): LazyCollection

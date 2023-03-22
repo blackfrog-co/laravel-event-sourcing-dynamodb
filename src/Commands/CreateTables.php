@@ -7,9 +7,9 @@ use Illuminate\Console\Command;
 
 class CreateTables extends Command
 {
-    public $signature = 'laravel-event-sourcing-dynamodb:create-tables';
+    public $signature = 'event-sourcing-dynamodb:create-tables';
 
-    public $description = 'Creates the requisite DynamoDb tables for event sourcing.';
+    public $description = 'Creates the requisite DynamoDb tables for laravel event sourcing.';
 
     public function __construct(private readonly DynamoDbClient $dynamoDbClient)
     {

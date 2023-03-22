@@ -45,4 +45,6 @@ return [
     ],
 
     'snapshot-table' => 'snapshots',
+
+    'snapshot-part-table' => 'snapshot_parts'
 ];

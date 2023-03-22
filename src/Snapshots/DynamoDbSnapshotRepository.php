@@ -18,6 +18,4 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
         // TODO: Implement persist() method.
         //This will need to break the snapshot down into parts to work around dynamodb record/request size limitations.
     }
-
-
 }

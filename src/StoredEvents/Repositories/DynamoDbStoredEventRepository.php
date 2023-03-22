@@ -12,19 +12,19 @@ use Spatie\EventSourcing\StoredEvents\StoredEvent;
 class DynamoDbStoredEventRepository implements StoredEventRepository
 {
     protected string $storedEventTable;
+
     public function __construct(
         private DynamoDbClient $dynamoDbClient,
         private IdGenerator $idGenerator
-    )
-    {
+    ) {
         $this->storedEventTable = (string) config(
             'event-sourcing-dynamodb.stored_event_table',
             'stored_events'
         );
     }
+
     public function find(int $id): StoredEvent
     {
-
     }
 
     public function retrieveAll(string $uuid = null): LazyCollection
@@ -66,6 +66,4 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
     {
         // TODO: Implement getLatestAggregateVersion() method.
     }
-
-
 }

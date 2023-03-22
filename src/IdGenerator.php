@@ -12,6 +12,7 @@ class IdGenerator
     /**
      * We ensure that we don't generate a number with more digits than can
      * fit in an integer (PHP_INT_MAX) on 64bit PHP.
+     *
      * @see PHP_INT_MAX
      */
     const TARGET_ID_LENGTH = 19;
@@ -19,14 +20,12 @@ class IdGenerator
     /**
      * We track the last timestamp used to generate an id, so we can
      * avoid an instance of this class returning the same $id value twice.
-     * @var int|null
      */
     private ?int $timestamp = null;
 
     /**
      * We track the random integers used for the current microsecond timestamp, so we can
      * avoid one instance of this class returning the same $id value twice.
-     * @var array
      */
     private array $randomIntsUsed = [];
 
@@ -48,8 +47,7 @@ class IdGenerator
     public function __construct(
         private readonly Randomizer $randomizer,
         private readonly int $clockSkewWaitMicroseconds = 2_000_000, //2 seconds
-    )
-    {
+    ) {
     }
 
     public function generateId(): int
@@ -58,12 +56,12 @@ class IdGenerator
         $this->initTimestamp ??= $timestamp;
 
         //If the clock has been changed backwards since the last id was generated, wait for it to catch up
-        if($timestamp < $this->timestamp){
+        if ($timestamp < $this->timestamp) {
             $this->handleClockSkew($timestamp);
         }
 
         //We want enough random digits to create an integer id that fits inside INT_MAX on 64bit PHP.
-        $randomIntDigits = static::TARGET_ID_LENGTH - strlen((string)$timestamp);
+        $randomIntDigits = static::TARGET_ID_LENGTH - strlen((string) $timestamp);
         $randomInt = $this->randomIntAsZeroFilledString($randomIntDigits);
 
         //If we've generated an id for this timestamp already, we need to check for collisions.
@@ -83,7 +81,7 @@ class IdGenerator
         $this->timestamp = $timestamp;
         $this->randomIntsUsed[] = $randomInt;
 
-        $id = (int)($timestamp . $randomInt);
+        $id = (int) ($timestamp.$randomInt);
 
         $this->exceptIfIntIsNegative($id);
         $this->exceptIfIntMaxIsReached($id);
@@ -95,7 +93,7 @@ class IdGenerator
     {
         $skewMicroseconds = $this->timestamp - $timestamp;
 
-        if($skewMicroseconds > $this->clockSkewWaitMicroseconds){
+        if ($skewMicroseconds > $this->clockSkewWaitMicroseconds) {
             throw new \RuntimeException(
                 "Backwards system clock change greater than {$this->clockSkewWaitMicroseconds} microseconds detected."
             );
@@ -107,6 +105,7 @@ class IdGenerator
     private function microsecondsTimestamp(): int
     {
         $microTime = explode(' ', microtime());
+
         return intval($microTime[1] * 1E6) + intval(round($microTime[0] * 1E6));
     }
 
@@ -121,7 +120,7 @@ class IdGenerator
 
     private function exceptIfNoUniqueValuesRemain(int $randomIntDigits): void
     {
-        if(isset($this->maxUniqueInts) === false){
+        if (isset($this->maxUniqueInts) === false) {
             $maxValue = pow(10, $randomIntDigits) - 1;
             //We cap this to 80% of the total available space as performance degrades rapidly as we approach
             //the true mathematical limit on possible unique values as we have to regenerate too many times.
@@ -129,7 +128,7 @@ class IdGenerator
         }
 
         if (count($this->randomIntsUsed) > $this->maxUniqueInts) {
-            throw new RuntimeException("Unable to generate a unique value.");
+            throw new RuntimeException('Unable to generate a unique value.');
         }
     }
 
@@ -137,15 +136,14 @@ class IdGenerator
     {
         //If PHP_INT_MAX is reached we have possible integer overflow and cannot trust the id generated.
         if ($id === PHP_INT_MAX) {
-            throw new RuntimeException("PHP_INT_MAX limit reached.");
+            throw new RuntimeException('PHP_INT_MAX limit reached.');
         }
     }
 
     private function exceptIfIntIsNegative(int $id): void
     {
         if ($id < 0) {
-            throw new RuntimeException("Negative Id generated.");
+            throw new RuntimeException('Negative Id generated.');
         }
     }
-
 }

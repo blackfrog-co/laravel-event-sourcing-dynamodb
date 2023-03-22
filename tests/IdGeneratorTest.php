@@ -5,7 +5,6 @@ use Carbon\CarbonImmutable;
 use Random\Randomizer;
 use Symfony\Bridge\PhpUnit\ClockMock;
 
-
 beforeEach(function () {
     ClockMock::register(IdGenerator::class);
     ClockMock::withClockMock(false);
@@ -83,7 +82,6 @@ it('produces no duplicate ids over 500,000 iterations', function () {
     }
 
     expect($duplicateFound)->toBeFalse();
-
 })->group('slow', 'collisions');
 
 it('uses an integer representation of the microsecond timestamp as the start of each id', function () {
@@ -93,11 +91,11 @@ it('uses an integer representation of the microsecond timestamp as the start of 
     $microsecondTimestampInt = intval($microTime[1] * 1E6) + intval(round($microTime[0] * 1E6));
 
     $id = $this->idGenerator->generateId();
-    $idAsString = (string)$id;
-    expect($idAsString)->toContain((string)$microsecondTimestampInt);
+    $idAsString = (string) $id;
+    expect($idAsString)->toContain((string) $microsecondTimestampInt);
 
     $firstSixteenDigitsOfId = substr($idAsString, 0, 16);
-    expect($firstSixteenDigitsOfId)->toEqual((string)$microsecondTimestampInt);
+    expect($firstSixteenDigitsOfId)->toEqual((string) $microsecondTimestampInt);
 });
 
 it('never returns the same id twice from the same instance, even in the same microsecond', function () {
@@ -136,7 +134,6 @@ it('may generate duplicate ids if two instances are used at the same microsecond
 
     $countOfDuplicateIds = count(array_intersect($idsGenerated1, $idsGenerated2));
     expect($countOfDuplicateIds)->toBeInt()->toBeGreaterThan(0);
-
 })->group('collisions');
 
 it('throws RuntimeException if the maximum unique values per microsecond is exceeded', function () {
@@ -168,7 +165,6 @@ it('generates ids when the system date is a unix date early in the epoch', funct
 })->group('extreme-dates');
 
 it('generates ids with reduced entropy when system date is 2286-11-20 onwards', function () {
-
     //From this date forward we start to get an extra digit in our microtime integer.
     //The id generator soldiers on with reduced entropy by generating one less random digit to append.
     $microtimeIntegerRolloverDate = CarbonImmutable::createFromDate(2286, 11, 20)
@@ -192,14 +188,12 @@ it('generates ids with reduced entropy when system date is 2286-11-20 onwards', 
         $microTime = explode(' ', ClockMock::microtime());
         $microsecondTimestampInt = intval($microTime[1] * 1E6) + intval(round($microTime[0] * 1E6));
 
-        $idAsString = (string)$id;
-        expect($idAsString)->toContain((string)$microsecondTimestampInt);
+        $idAsString = (string) $id;
+        expect($idAsString)->toContain((string) $microsecondTimestampInt);
 
         //The first 17 digits of the id are now the timestamp instead of 16
         $firstSeventeenDigitsOfId = substr($idAsString, 0, 17);
-        expect($firstSeventeenDigitsOfId)->toEqual((string)$microsecondTimestampInt);
+        expect($firstSeventeenDigitsOfId)->toEqual((string) $microsecondTimestampInt);
         $x++;
     }
-
 })->group('extreme-dates');
-

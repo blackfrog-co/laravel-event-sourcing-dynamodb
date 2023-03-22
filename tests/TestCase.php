@@ -3,9 +3,9 @@
 namespace BlackFrog\LaravelEventSourcingDynamodb\Tests;
 
 use AllowDynamicProperties;
+use BlackFrog\LaravelEventSourcingDynamodb\LaravelEventSourcingDynamodbServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use BlackFrog\LaravelEventSourcingDynamodb\LaravelEventSourcingDynamodbServiceProvider;
 
 #[AllowDynamicProperties] class TestCase extends Orchestra
 {

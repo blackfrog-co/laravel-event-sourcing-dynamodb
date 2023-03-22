@@ -2,9 +2,9 @@
 
 namespace BlackFrog\LaravelEventSourcingDynamodb;
 
+use BlackFrog\LaravelEventSourcingDynamodb\Commands\LaravelEventSourcingDynamodbCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use BlackFrog\LaravelEventSourcingDynamodb\Commands\LaravelEventSourcingDynamodbCommand;
 
 class LaravelEventSourcingDynamodbServiceProvider extends PackageServiceProvider
 {

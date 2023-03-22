@@ -16,7 +16,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function __construct(
         private DynamoDbClient $dynamo,
-        private IdGenerator    $idGenerator,
+        private IdGenerator $idGenerator,
         private StoredEventFactory $storedEventFactory,
     ) {
         $this->table = (string) config(
@@ -61,7 +61,6 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
     public function persist(ShouldBeStored $event, string $uuid = null): StoredEvent
     {
         $id = $this->idGenerator->generateId();
-
     }
 
     public function persistMany(array $events, string $uuid = null): LazyCollection

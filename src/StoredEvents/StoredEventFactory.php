@@ -8,6 +8,5 @@ class StoredEventFactory
 {
     public function makeFromDynamoDbRow(): StoredEvent
     {
-
     }
 }

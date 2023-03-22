@@ -6,9 +6,6 @@ class DynamoDbStoredEvent
 {
     public function __construct(
 
-    )
-    {
-
+    ) {
     }
-
 }

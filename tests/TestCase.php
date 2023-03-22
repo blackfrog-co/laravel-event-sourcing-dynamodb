@@ -38,7 +38,7 @@ use Orchestra\Testbench\TestCase as Orchestra;
             'token' => env('AWS_SESSION_TOKEN', null),
             'endpoint' => env('DYNAMODB_ENDPOINT', null),
             'prefix' => '', // table prefix
-            'database' => 'something'
+            'database' => 'something',
         ]);
         /*
         $migration = include __DIR__.'/../database/migrations/create_laravel-event-sourcing-dynamodb_table.php.stub';

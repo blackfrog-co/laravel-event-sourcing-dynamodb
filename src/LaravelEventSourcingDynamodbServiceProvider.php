@@ -5,7 +5,6 @@ namespace BlackFrog\LaravelEventSourcingDynamodb;
 use Aws\DynamoDb\DynamoDbClient;
 use BlackFrog\LaravelEventSourcingDynamodb\Commands\CreateTables;
 use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\Repositories\DynamoDbStoredEventRepository;
-use Illuminate\Foundation\Application;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -26,8 +25,6 @@ class LaravelEventSourcingDynamodbServiceProvider extends PackageServiceProvider
         $this->app->when(CreateTables::class)
             ->needs(DynamoDbClient::class)
             ->give($dynamoDbClient);
-
-
     }
 
     public function configurePackage(Package $package): void
@@ -42,7 +39,5 @@ class LaravelEventSourcingDynamodbServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews()
             ->hasCommand(CreateTables::class);
-
-
     }
 }

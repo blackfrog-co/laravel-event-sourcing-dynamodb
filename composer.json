@@ -26,10 +26,10 @@
     ],
     "require": {
         "php-64bit": "^8.2",
+        "aws/aws-sdk-php": "^3.261.16",
         "illuminate/contracts": "^10.0",
-        "kitar/laravel-dynamodb": "^1.1",
-        "spatie/laravel-event-sourcing": "^7.3",
-        "spatie/laravel-package-tools": "^1.14.0"
+        "spatie/laravel-event-sourcing": "^7.3.3",
+        "spatie/laravel-package-tools": "^1.14.2"
     },
     "require-dev": {
         "laravel/pint": "^1.0",

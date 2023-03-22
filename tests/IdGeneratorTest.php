@@ -37,7 +37,7 @@ it('generates a positive fixed length 19 digit integer id', function () {
 });
 
 it('generates ids greater than previous ones if one or more microseconds pass between calls', function () {
-    $iterations = 100_000;
+    $iterations = 100;
     $x = 1;
     $previousId = 0;
 

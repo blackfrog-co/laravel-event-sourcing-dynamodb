@@ -1,8 +1,10 @@
 <?php
 
-// config for BlackFrog/LaravelEventSourcingDynamodb
-return [
-    'dynamodb-client' => [
+use Aws\DynamoDb\DynamoDbClient;
+
+
+beforeEach(function () {
+    $dynamoConfig = [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
         'version' => 'latest',
         'endpoint' => env('DYNAMODB_ENDPOINT', null),
@@ -10,11 +12,18 @@ return [
             'key' =>  env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
         ]
-    ],
+    ];
 
-    'stored-event-table' => 'stored_events',
+    $this->dynamoDbClient =  new DynamoDbClient($dynamoConfig);
+});
 
-    'stored-event-table-definition' => [
+afterEach(function () {
+});
+
+it('does dynamodb stuff', function () {
+
+    $this->dynamoDbClient->createTable([
+        'TableName' => 'testTable',
         'AttributeDefinitions' => [
             ['AttributeName' => 'id', 'AttributeType' => 'N'],
             ['AttributeName' => 'aggregate_uuid', 'AttributeType' => 'S'],
@@ -42,7 +51,9 @@ return [
             ],
         ],
         'BillingMode' => 'PAY_PER_REQUEST',
-    ],
+    ]);
 
-    'snapshot-table' => 'snapshots',
-];
+    $this->dynamoDbClient->deleteTable(
+        ['TableName' => 'testTable']
+    );
+});

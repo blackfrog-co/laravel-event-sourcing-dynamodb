@@ -66,6 +66,7 @@ class IdGenerator
 
         //If we've generated an id for this timestamp already, we need to check for collisions.
         if ($timestamp === $this->timestamp) {
+            $this->exceptIfNoUniqueValuesRemain($randomIntDigits);
             //If we've generated this int before for the current timestamp, we try again until we get a unique value.
             while (in_array($randomInt, $this->randomIntsUsed)) {
                 //If we've exhausted the number of values we want to generate per timestamp, throw an exception.
@@ -126,7 +127,6 @@ class IdGenerator
             //the true mathematical limit on possible unique values as we have to regenerate too many times.
             $this->maxUniqueInts = (int) ((80 / 100) * $maxValue);
         }
-
         if (count($this->randomIntsUsed) > $this->maxUniqueInts) {
             throw new RuntimeException('Unable to generate a unique value.');
         }

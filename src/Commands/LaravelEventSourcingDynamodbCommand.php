@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace BlackFrog\LaravelEventSourcingDynamodb\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class LaravelEventSourcingDynamodbCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'laravel-event-sourcing-dynamodb';
 
     public $description = 'My command';
 

@@ -16,7 +16,7 @@
     backupStaticProperties="false"
 >
     <testsuites>
-        <testsuite name="VendorName Test Suite">
+        <testsuite name="BlackFrog Test Suite">
             <directory>tests</directory>
         </testsuite>
     </testsuites>
@@ -30,7 +30,7 @@
             <clover outputFile="build/logs/clover.xml"/>
         </report>
     </coverage>
-    <logging>
-        <junit outputFile="build/report.junit.xml"/>
-    </logging>
+    <listeners>
+        <listener class="Symfony\Bridge\PhpUnit\SymfonyTestsListener"/>
+    </listeners>
 </phpunit>

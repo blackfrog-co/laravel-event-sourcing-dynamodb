@@ -11,11 +11,14 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
     {
         // TODO: Implement retrieve() method.
         // This will need to reconstitute the snapshot parts to reform the state.
+
+        return null;
     }
 
     public function persist(Snapshot $snapshot): Snapshot
     {
         // TODO: Implement persist() method.
         //This will need to break the snapshot down into parts to work around dynamodb record/request size limitations.
+        return new Snapshot('blah', 1, []);
     }
 }

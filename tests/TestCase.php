@@ -7,6 +7,7 @@ use Aws\DynamoDb\DynamoDbClient;
 use BlackFrog\LaravelEventSourcingDynamodb\LaravelEventSourcingDynamodbServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Spatie\EventSourcing\EventSourcingServiceProvider;
 
 #[AllowDynamicProperties] class TestCase extends Orchestra
 {
@@ -40,10 +41,8 @@ use Orchestra\Testbench\TestCase as Orchestra;
             'prefix' => '', // table prefix
             'database' => 'something',
         ]);
-        /*
-        $migration = include __DIR__.'/../database/migrations/create_laravel-event-sourcing-dynamodb_table.php.stub';
-        $migration->up();
-        */
+
+        $app->register(EventSourcingServiceProvider::class);
     }
 
     protected function getDynamoDbClient(): DynamoDbClient

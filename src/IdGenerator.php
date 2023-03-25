@@ -42,11 +42,11 @@ class IdGenerator
      * against the system clock changing backwards during the
      * life of this instance. It is set on first id generation.
      */
-    private readonly int $initTimestamp;
+    private int $initTimestamp;
 
     public function __construct(
         private readonly Randomizer $randomizer,
-        private readonly int $clockSkewWaitMicroseconds = 2_000_000, //2 seconds
+        private readonly int $clockSkewWaitMicroseconds = 2_000_000 //2 seconds
     ) {
     }
 
@@ -107,7 +107,10 @@ class IdGenerator
     {
         $microTime = explode(' ', microtime());
 
-        return intval($microTime[1] * 1E6) + intval(round($microTime[0] * 1E6));
+        return
+            intval((int) $microTime[1] * 1E6)
+            +
+            intval(round((float) $microTime[0] * 1E6));
     }
 
     private function randomIntAsZeroFilledString(int $digits): string

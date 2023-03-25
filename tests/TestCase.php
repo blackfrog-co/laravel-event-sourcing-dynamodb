@@ -4,6 +4,7 @@ namespace BlackFrog\LaravelEventSourcingDynamodb\Tests;
 
 use AllowDynamicProperties;
 use Aws\DynamoDb\DynamoDbClient;
+use BlackFrog\LaravelEventSourcingDynamodb\Commands\CreateTables;
 use BlackFrog\LaravelEventSourcingDynamodb\LaravelEventSourcingDynamodbServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
@@ -48,5 +49,35 @@ use Spatie\EventSourcing\EventSourcingServiceProvider;
     protected function getDynamoDbClient(): DynamoDbClient
     {
         return new DynamoDbClient(config('event-sourcing-dynamodb.dynamodb-client'));
+    }
+
+    protected function resetDynamoTable(string $tableName = null)
+    {
+        $tableName = $tableName ?? 'stored_events';
+
+        $this->deleteTableIfExists($tableName);
+    }
+
+    protected function deleteTableIfExists(string $name): void
+    {
+        if ($this->tableExists($name)) {
+            $this->getDynamoDbClient()->deleteTable(
+                ['TableName' => 'stored_events']
+            );
+            $this->getDynamoDbClient()->waitUntil('TableNotExists', ['TableName' => $name]);
+        }
+    }
+
+    protected function tableExists(string $name): bool
+    {
+        $tableNames = $this->getDynamoDbClient()->listTables()->get('TableNames');
+
+        return in_array($name, $tableNames);
+    }
+
+    protected function createTable(): void
+    {
+        $this->deleteTableIfExists('stored_events');
+        $this->artisan(CreateTables::class);
     }
 }

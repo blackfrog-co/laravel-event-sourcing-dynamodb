@@ -33,7 +33,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
     {
         $dynamoResult = $this->dynamo->getItem([
             'TableName' => $this->table,
-            'ConsistentRead' => false,
+            'ConsistentRead' => false, //TODO: Make configurable
             'Key' => [
                 'id' => [
                     'N' => $id,
@@ -41,11 +41,17 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
             ],
         ]);
 
+        //TODO: Handle no record.
+
         $dynamoItem = $this->dynamoMarshaler->unmarshalItem($dynamoResult->get('Item'));
 
+        return $this->storedEventFromDynamoItem($dynamoItem);
+    }
+
+    private function storedEventFromDynamoItem(array $dynamoItem): StoredEvent
+    {
         return new StoredEvent([
             'id' => $dynamoItem['id'],
-            //TODO: make this better
             'event_properties' => $dynamoItem['event_properties'],
             'aggregate_uuid' => $dynamoItem['aggregate_uuid'] ?? '',
             'aggregate_version' => (string) $dynamoItem['aggregate_version'],
@@ -62,7 +68,49 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function retrieveAll(string $uuid = null): LazyCollection
     {
-        // TODO: Implement retrieveAll() method.
+        if ($uuid) {
+            return $this->retrieveByAggregateRootUuid($uuid);
+        }
+
+        $results = $this->dynamo->getPaginator('Scan', [
+            'TableName' => $this->table,
+        ]);
+
+        return LazyCollection::make(
+            function () use (&$results) {
+                while ($result = $results->current()) {
+                    foreach ($result->get('Items') as $item) {
+                        $dynamoItem = $this->dynamoMarshaler->unmarshalItem($item);
+                        yield $this->storedEventFromDynamoItem($dynamoItem);
+                    }
+
+                    $results->next();
+                }
+            }
+        )->remember();
+    }
+
+    private function retrieveByAggregateRootUuid(string $uuid): LazyCollection
+    {
+        $results = $this->dynamo->getPaginator('Query', [
+            'TableName' => $this->table,
+            'IndexName' => 'aggregate_uuid-index',
+            'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid',
+            'ExpressionAttributeValues' => [':aggregate_uuid' => ['S' => $uuid]],
+        ]);
+
+        return LazyCollection::make(
+            function () use (&$results) {
+                while ($result = $results->current()) {
+                    foreach ($result->get('Items') as $item) {
+                        $dynamoItem = $this->dynamoMarshaler->unmarshalItem($item);
+                        yield $this->storedEventFromDynamoItem($dynamoItem);
+                    }
+
+                    $results->next();
+                }
+            }
+        )->remember();
     }
 
     public function retrieveAllStartingFrom(int $startingFrom, string $uuid = null): LazyCollection
@@ -102,9 +150,16 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
             'created_at' => $createdAt->timestamp,
         ]);
 
+        $this->writeStoredEventToDynamo($storedEvent);
+
+        return $storedEvent;
+    }
+
+    private function writeStoredEventToDynamo(StoredEvent $storedEvent): void
+    {
         $storedEventArray = $storedEvent->toArray();
 
-        //Fix an incorrect type issue in StoredEvent.
+        //Fix an incorrect type in StoredEvent that upsets DynamoDb.
         $storedEventArray['aggregate_version'] = (int) $storedEventArray['aggregate_version'];
 
         $putItemRequest = [
@@ -113,8 +168,6 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
         ];
 
         $this->dynamo->putItem($putItemRequest);
-
-        return $storedEvent;
     }
 
     public function persistMany(array $events, string $uuid = null): LazyCollection
@@ -124,7 +177,9 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function update(StoredEvent $storedEvent): StoredEvent
     {
-        // TODO: Implement update() method.
+        $this->writeStoredEventToDynamo($storedEvent);
+
+        return $storedEvent;
     }
 
     public function getLatestAggregateVersion(string $aggregateUuid): int

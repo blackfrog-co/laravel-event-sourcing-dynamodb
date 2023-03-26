@@ -191,6 +191,65 @@ it('can count all events for an aggregate root uuid starting from an event id', 
     expect($countedEvents)->toEqual(551);
 });
 
+it('can retrieve all events starting from an event id', function () {
+    $eventCount = 900;
+    $x = 1;
+
+    //We use a large string to guarantee pagination in response from dynamodb
+    $randomString = Str::random(6650);
+    $uuids = [Uuid::uuid4(), Uuid::uuid4(), Uuid::uuid4(), Uuid::uuid4()];
+
+    $countFromEvent = null;
+
+    while ($x <= $eventCount) {
+        $event = $this->storedEventRepository
+            ->persist(new DummyStorableEvent($randomString), $uuids[rand(0, 3)]);
+
+        if ($x === 350) {
+            $countFromEvent = $event;
+        }
+
+        $x++;
+    }
+
+    $events = $this->storedEventRepository->retrieveAllStartingFrom($countFromEvent->id);
+    expect($events->count())->toEqual(551);
+});
+
+it('can retrieve all events for an aggregate root uuid starting from an event id', function () {
+    $eventCount = 900;
+    $x = 1;
+
+    //We use a large string to guarantee pagination in response from dynamodb
+    $randomString = Str::random(6650);
+    $uuids = [Uuid::uuid4(), Uuid::uuid4(), Uuid::uuid4(), Uuid::uuid4()];
+
+    //900 events for other aggregate roots
+    while ($x <= $eventCount) {
+        $this->storedEventRepository
+            ->persist(new DummyStorableEvent($randomString), $uuids[rand(0, 3)]);
+        $x++;
+    }
+
+    //900 events for our target aggregate root
+    $uuid = Uuid::uuid4();
+    $x = 1;
+    $countFromEvent = null;
+    while ($x <= $eventCount) {
+        $event = $this->storedEventRepository
+            ->persist(new DummyStorableEvent($randomString), $uuid);
+
+        if ($x === 350) {
+            $countFromEvent = $event;
+        }
+
+        $x++;
+    }
+
+    $events = $this->storedEventRepository->retrieveAllStartingFrom($countFromEvent->id, $uuid);
+    expect($events->count())->toEqual(551);
+});
+
 it('can get the latest aggregate version for an aggregate root uuid', function () {
     $aggregateRootUuid = Uuid::uuid4();
     $event = new DummyStorableEvent('yahhh');

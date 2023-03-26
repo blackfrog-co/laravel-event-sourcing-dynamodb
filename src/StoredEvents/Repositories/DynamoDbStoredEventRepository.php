@@ -109,15 +109,13 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function retrieveAllStartingFrom(int $startingFrom, string $uuid = null): LazyCollection
     {
-        // TODO: test coverage
         if ($uuid !== null) {
             return $this->retrieveAllStartingFromByUuid($startingFrom, $uuid);
         }
 
         $resultPaginator = $this->dynamo->getPaginator('Scan', [
             'TableName' => $this->table,
-            'IndexName' => 'id-sort_id-index',
-            'KeyConditionExpression' => 'id > :id',
+            'FilterExpression' => 'id >= :id',
             'ExpressionAttributeValues' => [
                 ':id' => ['N' => $startingFrom],
             ],
@@ -168,6 +166,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
             'ExpressionAttributeValues' => [
                 ':id' => ['N' => $startingFrom],
             ],
+            'ProjectionExpression' => 'id',
         ]);
 
         $count = 0;

@@ -6,10 +6,11 @@ use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\Repositories\DynamoDbSto
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 use Random\Randomizer;
+use Spatie\EventSourcing\StoredEvents\ShouldBeStored;
 use Spatie\EventSourcing\StoredEvents\StoredEvent;
 
 beforeAll(function () {
-    class DummyStorableEvent extends \Spatie\EventSourcing\StoredEvents\ShouldBeStored
+    class DummyStorableEvent extends ShouldBeStored
     {
         public function __construct(
           public readonly string $message
@@ -48,30 +49,48 @@ it('can store and retrieve an event', function () {
     expect($retrievedEvent2)->not()->toEqual($storedEvent);
 });
 
-it('retrieves all events', function () {
+it('retrieves all events in order', function () {
     $eventCount = 900;
     $x = 1;
 
+    //We use a large string to guarantee pagination in response from dynamodb
     $randomString = Str::random(6650);
     $uuids = [Uuid::uuid4(), Uuid::uuid4(), Uuid::uuid4(), Uuid::uuid4()];
+
+    $firstEvent = null;
+    $lastEvent = null;
+
     while ($x <= $eventCount) {
-        $this->storedEventRepository
+        $event = $this->storedEventRepository
             ->persist(new DummyStorableEvent($randomString), $uuids[rand(0, 3)]);
+
+        if ($firstEvent === null) {
+            $firstEvent = $event;
+        }
+
+        if ($x === $eventCount) {
+            $lastEvent = $event;
+        }
+
         $x++;
     }
 
-    $lazyCollection = $this->storedEventRepository->retrieveAll();
+    $storedEvents = $this->storedEventRepository->retrieveAll();
 
-    expect($lazyCollection->count())
+    expect($storedEvents->count())
         ->toEqual($eventCount)
-        ->and($lazyCollection)
-        ->each(fn ($storedEvent) => $storedEvent->toBeInstanceOf(StoredEvent::class));
+        ->and($storedEvents)
+        ->each(fn ($storedEvent) => $storedEvent->toBeInstanceOf(StoredEvent::class))
+        //And event order is preserved
+        ->and($storedEvents->first()->id)->toEqual($firstEvent->id)
+        ->and($storedEvents->last()->id)->toEqual($lastEvent->id);
 });
 
 it('retrieves events in order by aggregateUuid', function () {
     //Generate 900 events with random aggregate Uuids
     $eventCount = 900;
     $x = 1;
+    //We use a large string to guarantee pagination in responses from dynamodb
     $randomString = Str::random(6650);
     $uuids = [Uuid::uuid4(), Uuid::uuid4(), Uuid::uuid4(), Uuid::uuid4()];
 
@@ -105,9 +124,88 @@ it('retrieves events in order by aggregateUuid', function () {
 
     $storedEvents = $this->storedEventRepository->retrieveAll($uuid);
 
-    expect($storedEvents->count())->toEqual($eventCount);
+    //900 matching events are retrieved
+    expect($storedEvents->count())->toEqual($eventCount)
+        ->and($storedEvents)->each(fn ($storedEvent) => $storedEvent->toBeInstanceOf(StoredEvent::class))
+        //And event order is preserved
+        ->and($storedEvents->first()->id)->toEqual($firstEvent->id)
+        ->and($storedEvents->last()->id)->toEqual($lastEvent->id);
+});
 
-    expect($storedEvents->first()->id)->toEqual($firstEvent->id);
+it('can count all events starting from an event id', function () {
+    $eventCount = 900;
+    $x = 1;
 
-    expect($storedEvents->last()->id)->toEqual($lastEvent->id);
+    //We use a large string to guarantee pagination in response from dynamodb
+    $randomString = Str::random(6650);
+    $uuids = [Uuid::uuid4(), Uuid::uuid4(), Uuid::uuid4(), Uuid::uuid4()];
+
+    $countFromEvent = null;
+
+    while ($x <= $eventCount) {
+        $event = $this->storedEventRepository
+            ->persist(new DummyStorableEvent($randomString), $uuids[rand(0, 3)]);
+
+        if ($x === 350) {
+            $countFromEvent = $event;
+        }
+
+        $x++;
+    }
+
+    $countedEvents = $this->storedEventRepository->countAllStartingFrom($countFromEvent->id);
+    expect($countedEvents)->toEqual(551);
+});
+
+it('can count all events for an aggregate root uuid starting from an event id', function () {
+    $eventCount = 900;
+    $x = 1;
+
+    //We use a large string to guarantee pagination in response from dynamodb
+    $randomString = Str::random(6650);
+    $uuids = [Uuid::uuid4(), Uuid::uuid4(), Uuid::uuid4(), Uuid::uuid4()];
+
+    //900 events for other aggregate roots
+    while ($x <= $eventCount) {
+        $this->storedEventRepository
+           ->persist(new DummyStorableEvent($randomString), $uuids[rand(0, 3)]);
+        $x++;
+    }
+
+    //900 events for our target aggregate root
+    $uuid = Uuid::uuid4();
+    $x = 1;
+    $countFromEvent = null;
+    while ($x <= $eventCount) {
+        $event = $this->storedEventRepository
+            ->persist(new DummyStorableEvent($randomString), $uuid);
+
+        if ($x === 350) {
+            $countFromEvent = $event;
+        }
+
+        $x++;
+    }
+
+    $countedEvents = $this->storedEventRepository->countAllStartingFrom($countFromEvent->id, $uuid);
+    expect($countedEvents)->toEqual(551);
+});
+
+it('can get the latest aggregate version for an aggregate root uuid', function () {
+    $aggregateRootUuid = Uuid::uuid4();
+    $event = new DummyStorableEvent('yahhh');
+    $event->setAggregateRootVersion(1);
+    $this->storedEventRepository
+        ->persist($event, $aggregateRootUuid);
+
+    $event->setAggregateRootVersion(5);
+    $this->storedEventRepository
+        ->persist($event, $aggregateRootUuid);
+
+    $event->setAggregateRootVersion(3);
+    $this->storedEventRepository
+        ->persist($event, $aggregateRootUuid);
+
+    $latestAggregateVersion = $this->storedEventRepository->getLatestAggregateVersion($aggregateRootUuid);
+    expect($latestAggregateVersion)->toBeInt()->toEqual(5);
 });

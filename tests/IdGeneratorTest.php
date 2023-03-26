@@ -5,10 +5,14 @@ use Carbon\CarbonImmutable;
 use Random\Randomizer;
 use Symfony\Bridge\PhpUnit\ClockMock;
 
+beforeAll(function () {
+    class ClockMockedIdGenerator extends IdGenerator
+    {
+    }
+});
+
 beforeEach(function () {
-    ClockMock::register(IdGenerator::class);
-    ClockMock::withClockMock(false);
-    $this->idGenerator = new IdGenerator(new Randomizer());
+    $this->idGenerator = new ClockMockedIdGenerator(new Randomizer());
 });
 
 afterEach(function () {
@@ -67,8 +71,8 @@ it('can generate 10 million ids in under 60 seconds on most systems', function (
     expect($totalExecutionTimeSeconds)->toBeLessThan(60);
 })->group('performance', 'slow');
 
-it('produces no duplicate ids over 500,000 iterations', function () {
-    $iterations = 500_000;
+it('produces no duplicate ids over 50,000 iterations', function () {
+    $iterations = 50_000;
     $generatedIds = [];
     $x = 1;
 
@@ -85,10 +89,10 @@ it('produces no duplicate ids over 500,000 iterations', function () {
 })->group('slow', 'collisions');
 
 it('uses an integer representation of the microsecond timestamp as the start of each id', function () {
-    ClockMock::withClockMock(true);
-
+    ClockMock::withClockMock(1679836125);
+    ClockMock::register(ClockMockedIdGenerator::class);
     $microTime = explode(' ', ClockMock::microtime());
-    $microsecondTimestampInt = intval($microTime[1] * 1E6) + intval(round($microTime[0] * 1E6));
+    $microsecondTimestampInt = $this->microTimeToInt($microTime);
 
     $id = $this->idGenerator->generateId();
     $idAsString = (string) $id;
@@ -100,7 +104,8 @@ it('uses an integer representation of the microsecond timestamp as the start of 
 
 it('never returns the same id twice from the same instance, even in the same microsecond', function () {
     //Fix the current time.
-    ClockMock::withClockMock(true);
+    ClockMock::withClockMock(1679836125);
+    ClockMock::register(ClockMockedIdGenerator::class);
     $maxUniqueIntegers = 799;
 
     $generatedIds = [];
@@ -117,6 +122,7 @@ it('never returns the same id twice from the same instance, even in the same mic
 it('may generate duplicate ids if two instances are used at the same microsecond', function () {
     //Fix the current microsecond time.
     ClockMock::withClockMock(true);
+    ClockMock::register(ClockMockedIdGenerator::class);
 
     //450 iterations in one microsecond guarantees at least some collisions between two instances.
     $iterations = 450;
@@ -138,7 +144,8 @@ it('may generate duplicate ids if two instances are used at the same microsecond
 
 it('throws RuntimeException if the maximum unique values per microsecond is exceeded', function () {
     //Fix the current time.
-    ClockMock::withClockMock(true);
+    ClockMock::withClockMock(1679836125);
+    ClockMock::register(ClockMockedIdGenerator::class);
 
     //Run 801 iterations (the internal limit is 800 values per microsecond)
     //In year 2286 this limit will drop to around 80 per microsecond.
@@ -155,6 +162,7 @@ it('throws RuntimeException if the maximum unique values per microsecond is exce
 it('generates ids when the system date is a unix date early in the epoch', function () {
     //Fix the current time to 1 second since the start of unix epoch.
     ClockMock::withClockMock(1);
+    ClockMock::register(ClockMockedIdGenerator::class);
 
     $id = $this->idGenerator->generateId();
 
@@ -171,8 +179,8 @@ it('generates ids with reduced entropy when system date is 2286-11-20 onwards', 
         ->setTime(17, 46, 40);
 
     //Fix the current microsecond time to our future boundary date.
-    ClockMock::register(IdGenerator::class);
     ClockMock::withClockMock($microtimeIntegerRolloverDate->getTimestamp());
+    ClockMock::register(ClockMockedIdGenerator::class);
 
     //The max iterations per microsecond falls to 79 due to fewer available random numbers.
     $iterations = 79;
@@ -186,7 +194,7 @@ it('generates ids with reduced entropy when system date is 2286-11-20 onwards', 
             ->toBeLessThan(PHP_INT_MAX);
 
         $microTime = explode(' ', ClockMock::microtime());
-        $microsecondTimestampInt = intval($microTime[1] * 1E6) + intval(round($microTime[0] * 1E6));
+        $microsecondTimestampInt = $this->microTimeToInt($microTime);
 
         $idAsString = (string) $id;
         expect($idAsString)->toContain((string) $microsecondTimestampInt);

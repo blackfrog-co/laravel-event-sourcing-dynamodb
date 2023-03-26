@@ -4,6 +4,7 @@ namespace BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\Repositories;
 
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Marshaler;
+use Aws\ResultPaginator;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGenerator;
 use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\MetaData;
 use Carbon\Carbon;
@@ -41,8 +42,6 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
             ],
         ]);
 
-        //TODO: Handle no record.
-
         $dynamoItem = $this->dynamoMarshaler->unmarshalItem($dynamoResult->get('Item'));
 
         return $this->storedEventFromDynamoItem($dynamoItem);
@@ -72,42 +71,37 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
             return $this->retrieveByAggregateRootUuid($uuid);
         }
 
-        $results = $this->dynamo->getPaginator('Scan', [
+        $resultPaginator = $this->dynamo->getPaginator('Scan', [
             'TableName' => $this->table,
+            'IndexName' => 'id-sort_id-index',
         ]);
 
-        return LazyCollection::make(
-            function () use (&$results) {
-                while ($result = $results->current()) {
-                    foreach ($result->get('Items') as $item) {
-                        $dynamoItem = $this->dynamoMarshaler->unmarshalItem($item);
-                        yield $this->storedEventFromDynamoItem($dynamoItem);
-                    }
-
-                    $results->next();
-                }
-            }
-        )->remember();
+        return $this->lazyCollectionFromPaginator($resultPaginator);
     }
 
     private function retrieveByAggregateRootUuid(string $uuid): LazyCollection
     {
-        $results = $this->dynamo->getPaginator('Query', [
+        $resultPaginator = $this->dynamo->getPaginator('Query', [
             'TableName' => $this->table,
             'IndexName' => 'aggregate_uuid-index',
             'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid',
             'ExpressionAttributeValues' => [':aggregate_uuid' => ['S' => $uuid]],
         ]);
 
+        return $this->lazyCollectionFromPaginator($resultPaginator);
+    }
+
+    private function lazyCollectionFromPaginator(ResultPaginator $paginator): LazyCollection
+    {
         return LazyCollection::make(
-            function () use (&$results) {
-                while ($result = $results->current()) {
+            function () use (&$paginator) {
+                while ($result = $paginator->current()) {
                     foreach ($result->get('Items') as $item) {
                         $dynamoItem = $this->dynamoMarshaler->unmarshalItem($item);
                         yield $this->storedEventFromDynamoItem($dynamoItem);
                     }
 
-                    $results->next();
+                    $paginator->next();
                 }
             }
         )->remember();
@@ -115,17 +109,99 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function retrieveAllStartingFrom(int $startingFrom, string $uuid = null): LazyCollection
     {
-        // TODO: Implement retrieveAllStartingFrom() method.
+        // TODO: test coverage
+        if ($uuid !== null) {
+            return $this->retrieveAllStartingFromByUuid($startingFrom, $uuid);
+        }
+
+        $resultPaginator = $this->dynamo->getPaginator('Scan', [
+            'TableName' => $this->table,
+            'IndexName' => 'id-sort_id-index',
+            'KeyConditionExpression' => 'id > :id',
+            'ExpressionAttributeValues' => [
+                ':id' => ['N' => $startingFrom],
+            ],
+        ]);
+
+        return $this->lazyCollectionFromPaginator($resultPaginator);
+    }
+
+    private function retrieveAllStartingFromByUuid(int $startingFrom, string $uuid): LazyCollection
+    {
+        $resultPaginator = $this->dynamo->getPaginator('Query', [
+            'TableName' => $this->table,
+            'IndexName' => 'aggregate_uuid-index',
+            'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid AND id >= :id',
+            'ExpressionAttributeValues' => [
+                ':aggregate_uuid' => ['S' => $uuid],
+                ':id' => ['N' => $startingFrom],
+            ],
+        ]);
+
+        return $this->lazyCollectionFromPaginator($resultPaginator);
     }
 
     public function retrieveAllAfterVersion(int $aggregateVersion, string $aggregateUuid): LazyCollection
     {
-        // TODO: Implement retrieveAllAfterVersion() method.
+        //TODO: Test coverage
+        $resultPaginator = $this->dynamo->getPaginator('Query', [
+            'TableName' => $this->table,
+            'IndexName' => 'aggregate_uuid-version-index',
+            'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid AND aggregate_version > :aggregate_version',
+            'ExpressionAttributeValues' => [
+                ':aggregate_uuid' => ['S' => $aggregateUuid],
+                ':aggregate_version' => ['N' => $aggregateVersion],
+            ],
+        ]);
+
+        return $this->lazyCollectionFromPaginator($resultPaginator);
     }
 
     public function countAllStartingFrom(int $startingFrom, string $uuid = null): int
     {
-        // TODO: Implement countAllStartingFrom() method.
+        if ($uuid !== null) {
+            return $this->countStartingFromByUuid($startingFrom, $uuid);
+        }
+
+        $resultPaginator = $this->dynamo->getPaginator('Scan', [
+            'TableName' => $this->table,
+            'FilterExpression' => 'id >= :id',
+            'ExpressionAttributeValues' => [
+                ':id' => ['N' => $startingFrom],
+            ],
+        ]);
+
+        $count = 0;
+
+        while ($result = $resultPaginator->current()) {
+            $count += $result->get('Count');
+            $resultPaginator->next();
+        }
+
+        return $count;
+    }
+
+    private function countStartingFromByUuid(int $startingFrom, string $uuid): int
+    {
+        $resultPaginator = $this->dynamo->getPaginator('Query', [
+            'TableName' => $this->table,
+            'IndexName' => 'aggregate_uuid-index',
+            'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid AND id >= :id',
+            'ExpressionAttributeValues' => [
+                ':aggregate_uuid' => ['S' => $uuid],
+                ':id' => ['N' => $startingFrom],
+            ],
+            'ProjectionExpression' => 'id',
+        ]);
+
+        $count = 0;
+
+        while ($result = $resultPaginator->current()) {
+            $count += $result->get('ScannedCount');
+            $resultPaginator->next();
+        }
+
+        return $count;
     }
 
     public function persist(ShouldBeStored $event, string $uuid = null): StoredEvent
@@ -162,6 +238,9 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
         //Fix an incorrect type in StoredEvent that upsets DynamoDb.
         $storedEventArray['aggregate_version'] = (int) $storedEventArray['aggregate_version'];
 
+        //Duplicate id to work around dynamo indexing limitations, allowing consistent ordering.
+        $storedEventArray['sort_id'] = $storedEventArray['id'];
+
         $putItemRequest = [
             'TableName' => config('event-sourcing-dynamodb.stored-event-table'),
             'Item' => $this->dynamoMarshaler->marshalItem($storedEventArray),
@@ -172,7 +251,16 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function persistMany(array $events, string $uuid = null): LazyCollection
     {
-        // TODO: Implement persistMany() method.
+        //TODO: Test coverage
+        // TODO: A more efficient DynamoDb implementation is possible with batching.
+        $storedEvents = [];
+
+        /** @var ShouldBeStored $event */
+        foreach ($events as $event) {
+            $storedEvents[] = $this->persist($event, $uuid);
+        }
+
+        return new LazyCollection($storedEvents);
     }
 
     public function update(StoredEvent $storedEvent): StoredEvent
@@ -184,7 +272,23 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function getLatestAggregateVersion(string $aggregateUuid): int
     {
-        // TODO: Implement getLatestAggregateVersion() method.
+        $result = $this->dynamo->query([
+            'TableName' => $this->table,
+            'IndexName' => 'aggregate_uuid-version-index',
+            'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid',
+            'ExpressionAttributeValues' => [
+                ':aggregate_uuid' => ['S' => $aggregateUuid],
+            ],
+            'ScanIndexForward' => false,
+            'Limit' => 1,
+            'ProjectionExpression' => 'aggregate_version',
+        ]);
+
+        $item = $result->get('Items')[0];
+
+        $item = $this->dynamoMarshaler->unmarshalItem($item);
+
+        return $item['aggregate_version'];
     }
 
     private function getEventClass(string $class): string

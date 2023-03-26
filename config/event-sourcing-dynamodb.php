@@ -17,6 +17,7 @@ return [
     'stored-event-table-definition' => [
         'AttributeDefinitions' => [
             ['AttributeName' => 'id', 'AttributeType' => 'N'],
+            ['AttributeName' => 'sort_id', 'AttributeType' => 'N'],
             ['AttributeName' => 'aggregate_uuid', 'AttributeType' => 'S'],
             ['AttributeName' => 'aggregate_version', 'AttributeType' => 'N'],
         ],
@@ -33,6 +34,14 @@ return [
                 'Projection' => ['ProjectionType' => 'ALL'],
             ],
             [
+                'IndexName' => 'id-sort_id-index',
+                'KeySchema' => [
+                    ['AttributeName' => 'id', 'KeyType' => 'HASH'],
+                    ['AttributeName' => 'sort_id', 'KeyType' => 'RANGE'],
+                ],
+                'Projection' => ['ProjectionType' => 'ALL'],
+            ],
+            [
                 'IndexName' => 'aggregate_uuid-version-index',
                 'KeySchema' => [
                     ['AttributeName' => 'aggregate_uuid', 'KeyType' => 'HASH'],
@@ -45,6 +54,5 @@ return [
     ],
 
     'snapshot-table' => 'snapshots',
-
     'snapshot-part-table' => 'snapshot_parts',
 ];

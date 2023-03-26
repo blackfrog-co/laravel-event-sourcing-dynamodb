@@ -80,4 +80,12 @@ use Spatie\EventSourcing\EventSourcingServiceProvider;
         $this->deleteTableIfExists('stored_events');
         $this->artisan(CreateTables::class);
     }
+
+    protected function microTimeToInt(array $microTime): int
+    {
+        return
+            intval((int) $microTime[1] * 1E6)
+            +
+            intval(round((float) $microTime[0] * 1E6));
+    }
 }

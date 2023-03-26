@@ -143,7 +143,6 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function retrieveAllAfterVersion(int $aggregateVersion, string $aggregateUuid): LazyCollection
     {
-        //TODO: Test coverage
         $resultPaginator = $this->dynamo->getPaginator('Query', [
             'TableName' => $this->table,
             'IndexName' => 'aggregate_uuid-version-index',

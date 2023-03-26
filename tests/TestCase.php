@@ -62,7 +62,7 @@ use Spatie\EventSourcing\EventSourcingServiceProvider;
     {
         if ($this->tableExists($name)) {
             $this->getDynamoDbClient()->deleteTable(
-                ['TableName' => 'stored_events']
+                ['TableName' => $name]
             );
             $this->getDynamoDbClient()->waitUntil('TableNotExists', ['TableName' => $name]);
         }
@@ -75,9 +75,10 @@ use Spatie\EventSourcing\EventSourcingServiceProvider;
         return in_array($name, $tableNames);
     }
 
-    protected function createTable(): void
+    protected function createTables(): void
     {
         $this->deleteTableIfExists('stored_events');
+        $this->deleteTableIfExists('snapshots');
         $this->artisan(CreateTables::class);
     }
 

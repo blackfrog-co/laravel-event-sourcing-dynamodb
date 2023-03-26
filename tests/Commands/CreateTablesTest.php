@@ -2,16 +2,26 @@
 
 use BlackFrog\LaravelEventSourcingDynamodb\Commands\CreateTables;
 
+beforeEach(function () {
+    $this->deleteTableIfExists('stored_events');
+    $this->deleteTableIfExists('potato_events');
+    $this->deleteTableIfExists('snapshots');
+    $this->deleteTableIfExists('potato_snapshots');
+});
+
+afterEach(function () {
+    $this->deleteTableIfExists('stored_events');
+    $this->deleteTableIfExists('potato_events');
+    $this->deleteTableIfExists('snapshots');
+    $this->deleteTableIfExists('potato_snapshots');
+});
+
 it('creates the stored events table', function () {
     $this->artisan(CreateTables::class)->assertOk();
 
     $tableNames = $this->getDynamoDbClient()->listTables()->get('TableNames');
 
     expect($tableNames)->toBeArray()->toContain('stored_events');
-
-    $this->getDynamoDbClient()->deleteTable(
-        ['TableName' => 'stored_events']
-    );
 });
 
 it('respects the stored events table name set in config', function () {
@@ -22,20 +32,30 @@ it('respects the stored events table name set in config', function () {
     $tableNames = $this->getDynamoDbClient()->listTables()->get('TableNames');
 
     expect($tableNames)->toBeArray()->toContain('potato_events');
-
-    $this->getDynamoDbClient()->deleteTable(
-        ['TableName' => 'potato_events']
-    );
 });
 
-it('returns an error if the table already exists', function () {
-    //Create it the first time.
+it('creates the snapshots table', function () {
+    $this->artisan(CreateTables::class)->assertOk();
+
+    $tableNames = $this->getDynamoDbClient()->listTables()->get('TableNames');
+
+    expect($tableNames)->toBeArray()->toContain('snapshots');
+});
+
+it('respects the snapshotss table name set in config', function () {
+    $this->app['config']->set('event-sourcing-dynamodb.snapshot-table', 'potato_snapshots');
+
+    $this->artisan(CreateTables::class)->assertOk();
+
+    $tableNames = $this->getDynamoDbClient()->listTables()->get('TableNames');
+
+    expect($tableNames)->toBeArray()->toContain('potato_snapshots');
+});
+
+it('returns an error if the tables already exist', function () {
+    //Create the first time.
     $this->artisan(CreateTables::class)->assertOk();
 
     //Fail the second
     $this->artisan(CreateTables::class)->assertFailed();
-
-    $this->getDynamoDbClient()->deleteTable(
-        ['TableName' => 'stored_events']
-    );
 });

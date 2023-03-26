@@ -278,9 +278,9 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
             'ExpressionAttributeValues' => [
                 ':aggregate_uuid' => ['S' => $aggregateUuid],
             ],
+            'ProjectionExpression' => 'aggregate_version',
             'ScanIndexForward' => false,
             'Limit' => 1,
-            'ProjectionExpression' => 'aggregate_version',
         ]);
 
         $item = $result->get('Items')[0];

@@ -28,7 +28,7 @@ class CreateTables extends Command
             return self::FAILURE;
         }
 
-        $this->info("Creating stored events table '{$tableName}'");
+        $this->info("Creating {$tableName} table");
 
         $this->dynamoDbClient->createTable($createEventsTableRequest);
 
@@ -36,7 +36,27 @@ class CreateTables extends Command
 
         $this->dynamoDbClient->waitUntil('TableExists', ['TableName' => $tableName]);
 
-        $this->comment('Table creation finished.');
+        $this->comment('Events table creation finished.');
+
+        $createSnapshotsTableRequest = config('event-sourcing-dynamodb.snapshot-table-definition');
+        $tableName = config('event-sourcing-dynamodb.snapshot-table');
+        $createSnapshotsTableRequest['TableName'] = $tableName;
+
+        if ($this->tableAlreadyExists($tableName)) {
+            $this->error("Table {$tableName} already exists.");
+
+            return self::FAILURE;
+        }
+
+        $this->info("Creating {$tableName} table");
+
+        $this->dynamoDbClient->createTable($createSnapshotsTableRequest);
+
+        $this->info('Waiting for table creation to finish...');
+
+        $this->dynamoDbClient->waitUntil('TableExists', ['TableName' => $tableName]);
+
+        $this->comment('Snapshot table creation finished.');
 
         return self::SUCCESS;
     }

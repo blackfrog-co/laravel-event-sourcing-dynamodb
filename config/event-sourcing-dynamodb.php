@@ -54,5 +54,18 @@ return [
     ],
 
     'snapshot-table' => 'snapshots',
-    'snapshot-part-table' => 'snapshot_parts',
+    'snapshot-table-definition' => [
+        'AttributeDefinitions' => [
+            //            ['AttributeName' => 'id', 'AttributeType' => 'N'],
+            //            ['AttributeName' => 'part', 'AttributeType' => 'N'],
+            //            ['AttributeName' => 'parts_count', 'AttributeType' => 'N'],
+            ['AttributeName' => 'id_part', 'AttributeType' => 'S'],
+            ['AttributeName' => 'aggregate_uuid', 'AttributeType' => 'S'],
+        ],
+        'KeySchema' => [
+            ['AttributeName' => 'aggregate_uuid', 'KeyType' => 'HASH'],
+            ['AttributeName' => 'id_part', 'KeyType' => 'RANGE'],
+        ],
+        'BillingMode' => 'PAY_PER_REQUEST',
+    ],
 ];

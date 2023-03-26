@@ -18,8 +18,9 @@ beforeAll(function () {
         }
     }
 });
+
 beforeEach(function () {
-    $this->createTable();
+    $this->createTables();
 
     $this->storedEventRepository = new DynamoDbStoredEventRepository(
         $this->getDynamoDbClient(),

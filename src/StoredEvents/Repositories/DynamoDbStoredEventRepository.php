@@ -221,7 +221,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
                 createdAt: $createdAt->toDateTimeString(),
                 id: $id
             ),
-            'created_at' => $createdAt->timestamp,
+            'created_at' => $createdAt->getTimestamp(),
         ]);
 
         $this->writeStoredEventToDynamo($storedEvent);
@@ -233,8 +233,9 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
     {
         $storedEventArray = $storedEvent->toArray();
 
-        //Fix an incorrect type in StoredEvent that upsets DynamoDb.
+        //Fix an incorrect types in StoredEvent that upset DynamoDb.
         $storedEventArray['aggregate_version'] = (int) $storedEventArray['aggregate_version'];
+        $storedEventArray['created_at'] = (int) $storedEventArray['created_at'];
 
         //Duplicate id to work around dynamo indexing limitations, allowing consistent ordering.
         $storedEventArray['sort_id'] = $storedEventArray['id'];

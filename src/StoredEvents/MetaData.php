@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BlackFrog\LaravelEventSourcingDynamodb\StoredEvents;
 
 use Illuminate\Contracts\Support\Arrayable;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\Repositories;
 
 use Aws\DynamoDb\DynamoDbClient;

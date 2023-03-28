@@ -59,7 +59,7 @@
         "post-autoload-dump": "@php ./vendor/bin/testbench package:discover --ansi",
         "analyse": "vendor/bin/phpstan analyse --memory-limit=500M",
         "test": "vendor/bin/pest",
-        "test-coverage": "vendor/bin/pest --coverage",
+        "test-coverage": "export XDEBUG_MODE=coverage; vendor/bin/pest --coverage",
         "format": "vendor/bin/pint"
     },
     "config": {
@@ -73,10 +73,7 @@
         "laravel": {
             "providers": [
                 "BlackFrog\\LaravelEventSourcingDynamodb\\LaravelEventSourcingDynamodbServiceProvider"
-            ],
-            "aliases": {
-                "LaravelEventSourcingDynamodb": "BlackFrog\\LaravelEventSourcingDynamodb\\Facades\\LaravelEventSourcingDynamodb"
-            }
+            ]
         }
     },
     "minimum-stability": "dev",

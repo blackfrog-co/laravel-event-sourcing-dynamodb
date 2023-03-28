@@ -36,8 +36,8 @@ afterEach(function () {
 it('can store and retrieve a snapshot with huge state data', function () {
     $uuid = $this->faker->uuid();
     $stateData = $this->stateData;
-    //Add enough data to guarantee exceeding dynamo limitations and triggering
-    //our mechanics for breaking the data up into parts.
+    //Add enough data to guarantee exceeding dynamo record size limitations and trigger
+    //our mechanics for breaking the data up into parts for storage.
     $stateData['text'] = $this->faker->paragraph(350000);
     $snapshot = new Snapshot(
         $uuid,

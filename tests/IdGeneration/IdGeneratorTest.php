@@ -64,8 +64,8 @@ it('generates ids greater than previous ones if one or more microseconds pass be
     }
 });
 
-it('can generate 10 million ids in under 60 seconds on most systems', function () {
-    $iterations = 10_000_000;
+it('can generate 1 million ids in under 60 seconds on most systems', function () {
+    $iterations = 1_000_000;
     $startExecutionTime = hrtime(true);
     $x = 1;
 

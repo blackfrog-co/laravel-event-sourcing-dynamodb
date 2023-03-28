@@ -1,18 +1,26 @@
 <?php
 
-use BlackFrog\LaravelEventSourcingDynamodb\IdGenerator;
-use Carbon\CarbonImmutable;
+use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
+use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\MicroTimeTimestampProvider;
+use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\TimestampProvider;
 use Random\Randomizer;
-use Symfony\Bridge\PhpUnit\ClockMock;
 
 beforeAll(function () {
-    class ClockMockedIdGenerator extends IdGenerator
+    class FixedTimestampProvider implements TimestampProvider
     {
+        public function __construct(public int $microsecondsTimestamp)
+        {
+        }
+
+        public function microsecondsTimestamp(): int
+        {
+            return $this->microsecondsTimestamp;
+        }
     }
 });
 
 beforeEach(function () {
-    $this->idGenerator = new ClockMockedIdGenerator(new Randomizer());
+    $this->idGenerator = new IdGenerator(new Randomizer(), new MicroTimeTimestampProvider());
 });
 
 afterEach(function () {
@@ -88,24 +96,23 @@ it('produces no duplicate ids over 50,000 iterations', function () {
     expect($duplicateFound)->toBeFalse();
 })->group('slow', 'collisions');
 
-it('uses an integer representation of the microsecond timestamp as the start of each id', function () {
-    ClockMock::withClockMock(1679836125);
-    ClockMock::register(ClockMockedIdGenerator::class);
-    $microTime = explode(' ', ClockMock::microtime());
-    $microsecondTimestampInt = $this->microTimeToInt($microTime);
+it('uses the provided integer timestamp as the start of each id', function () {
+    $microTimeStamp = 1679836125000000;
+    $this->idGenerator = new IdGenerator(new Randomizer(), new FixedTimestampProvider($microTimeStamp));
 
     $id = $this->idGenerator->generateId();
     $idAsString = (string) $id;
-    expect($idAsString)->toContain((string) $microsecondTimestampInt);
+    expect($idAsString)->toContain((string) $microTimeStamp);
 
     $firstSixteenDigitsOfId = substr($idAsString, 0, 16);
-    expect($firstSixteenDigitsOfId)->toEqual((string) $microsecondTimestampInt);
+    expect($firstSixteenDigitsOfId)->toEqual((string) $microTimeStamp);
 });
 
 it('never returns the same id twice from the same instance, even in the same microsecond', function () {
     //Fix the current time.
-    ClockMock::withClockMock(1679836125);
-    ClockMock::register(ClockMockedIdGenerator::class);
+    $microTimeStamp = 1679836125000000;
+    $this->idGenerator = new IdGenerator(new Randomizer(), new FixedTimestampProvider($microTimeStamp));
+    //At least until the internal limit of unique values per microsecond is exceeded.
     $maxUniqueIntegers = 799;
 
     $generatedIds = [];
@@ -121,14 +128,14 @@ it('never returns the same id twice from the same instance, even in the same mic
 
 it('may generate duplicate ids if two instances are used at the same microsecond', function () {
     //Fix the current microsecond time.
-    ClockMock::withClockMock(true);
-    ClockMock::register(ClockMockedIdGenerator::class);
+    $microTimeStamp = 1679836125000000;
+    $timestampProvider = new FixedTimestampProvider($microTimeStamp);
 
     //450 iterations in one microsecond guarantees at least some collisions between two instances.
     $iterations = 450;
-    $idGenerator1 = new IdGenerator(new Randomizer());
+    $idGenerator1 = new IdGenerator(new Randomizer(), $timestampProvider);
     $idsGenerated1 = [];
-    $idGenerator2 = new IdGenerator(new Randomizer());
+    $idGenerator2 = new IdGenerator(new Randomizer(), $timestampProvider);
     $idsGenerated2 = [];
 
     $x = 1;
@@ -143,9 +150,10 @@ it('may generate duplicate ids if two instances are used at the same microsecond
 })->group('collisions');
 
 it('throws RuntimeException if the maximum unique values per microsecond is exceeded', function () {
-    //Fix the current time.
-    ClockMock::withClockMock(1679836125);
-    ClockMock::register(ClockMockedIdGenerator::class);
+    //Fix the current microsecond time.
+    $microTimeStamp = 1679836125000000;
+    $timestampProvider = new FixedTimestampProvider($microTimeStamp);
+    $this->idGenerator = new IdGenerator(new Randomizer(), $timestampProvider);
 
     //Run 801 iterations (the internal limit is 800 values per microsecond)
     //In year 2286 this limit will drop to around 80 per microsecond.
@@ -159,10 +167,11 @@ it('throws RuntimeException if the maximum unique values per microsecond is exce
 })->throws(RuntimeException::class)
     ->group('collisions');
 
-it('generates ids when the system date is a unix date early in the epoch', function () {
-    //Fix the current time to 1 second since the start of unix epoch.
-    ClockMock::withClockMock(1);
-    ClockMock::register(ClockMockedIdGenerator::class);
+it('generates ids even when the system date is a unix date early in the epoch', function () {
+    //Fix the current time to 1 microsecond since the start of unix epoch.
+    $microTimeStamp = 1;
+    $timestampProvider = new FixedTimestampProvider($microTimeStamp);
+    $this->idGenerator = new IdGenerator(new Randomizer(), $timestampProvider);
 
     $id = $this->idGenerator->generateId();
 
@@ -173,14 +182,11 @@ it('generates ids when the system date is a unix date early in the epoch', funct
 })->group('extreme-dates');
 
 it('generates ids with reduced entropy when system date is 2286-11-20 onwards', function () {
-    //From this date forward we start to get an extra digit in our microtime integer.
+    //From 2286-11-20 17:46:40 forward we roll over to get an extra digit in our micro time integer (10000000000000000)
     //The id generator soldiers on with reduced entropy by generating one less random digit to append.
-    $microtimeIntegerRolloverDate = CarbonImmutable::createFromDate(2286, 11, 20)
-        ->setTime(17, 46, 40);
-
-    //Fix the current microsecond time to our future boundary date.
-    ClockMock::withClockMock($microtimeIntegerRolloverDate->getTimestamp());
-    ClockMock::register(ClockMockedIdGenerator::class);
+    $microTimeStamp = 10000000000000000;
+    $timestampProvider = new FixedTimestampProvider($microTimeStamp);
+    $this->idGenerator = new IdGenerator(new Randomizer(), $timestampProvider);
 
     //The max iterations per microsecond falls to 79 due to fewer available random numbers.
     $iterations = 79;
@@ -193,15 +199,12 @@ it('generates ids with reduced entropy when system date is 2286-11-20 onwards', 
             ->toBeGreaterThan(999999999999999999)
             ->toBeLessThan(PHP_INT_MAX);
 
-        $microTime = explode(' ', ClockMock::microtime());
-        $microsecondTimestampInt = $this->microTimeToInt($microTime);
-
         $idAsString = (string) $id;
-        expect($idAsString)->toContain((string) $microsecondTimestampInt);
+        expect($idAsString)->toContain((string) $microTimeStamp);
 
-        //The first 17 digits of the id are now the timestamp instead of 16
+        //The first 17 digits of the id are now the timestamp instead of the first 16
         $firstSeventeenDigitsOfId = substr($idAsString, 0, 17);
-        expect($firstSeventeenDigitsOfId)->toEqual((string) $microsecondTimestampInt);
+        expect($firstSeventeenDigitsOfId)->toEqual((string) $microTimeStamp);
         $x++;
     }
 })->group('extreme-dates');

@@ -5,7 +5,7 @@ namespace BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\Repositories;
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Marshaler;
 use Aws\ResultPaginator;
-use BlackFrog\LaravelEventSourcingDynamodb\IdGenerator;
+use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
 use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\MetaData;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;

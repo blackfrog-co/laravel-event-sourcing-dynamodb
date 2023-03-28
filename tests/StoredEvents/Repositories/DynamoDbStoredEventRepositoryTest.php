@@ -1,7 +1,8 @@
 <?php
 
 use Aws\DynamoDb\Marshaler;
-use BlackFrog\LaravelEventSourcingDynamodb\IdGenerator;
+use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
+use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\MicroTimeTimestampProvider;
 use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\Repositories\DynamoDbStoredEventRepository;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
@@ -24,7 +25,7 @@ beforeEach(function () {
 
     $this->storedEventRepository = new DynamoDbStoredEventRepository(
         $this->getDynamoDbClient(),
-        new IdGenerator(new Randomizer()),
+        new IdGenerator(new Randomizer(), new MicroTimeTimestampProvider()),
         new Marshaler()
     );
 });

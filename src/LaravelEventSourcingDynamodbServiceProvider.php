@@ -4,6 +4,7 @@ namespace BlackFrog\LaravelEventSourcingDynamodb;
 
 use Aws\DynamoDb\DynamoDbClient;
 use BlackFrog\LaravelEventSourcingDynamodb\Commands\CreateTables;
+use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
 use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\Repositories\DynamoDbStoredEventRepository;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;

@@ -4,7 +4,7 @@ namespace BlackFrog\LaravelEventSourcingDynamodb\Snapshots;
 
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Marshaler;
-use BlackFrog\LaravelEventSourcingDynamodb\IdGenerator;
+use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
 use Illuminate\Support\Collection;
 use Spatie\EventSourcing\Snapshots\Snapshot;
 use Spatie\EventSourcing\Snapshots\SnapshotRepository;

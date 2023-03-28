@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BlackFrog\LaravelEventSourcingDynamodb;
+namespace BlackFrog\LaravelEventSourcingDynamodb\IdGeneration;
 
 use Random\Randomizer;
 use RuntimeException;
@@ -46,6 +46,7 @@ class IdGenerator
 
     public function __construct(
         private readonly Randomizer $randomizer,
+        private readonly TimestampProvider $timestampProvider,
         private readonly int $clockSkewWaitMicroseconds = 2_000_000 //2 seconds
     ) {
     }
@@ -105,12 +106,7 @@ class IdGenerator
 
     private function microsecondsTimestamp(): int
     {
-        $microTime = explode(' ', microtime());
-
-        return
-            intval((int) $microTime[1] * 1E6)
-            +
-            intval(round((float) $microTime[0] * 1E6));
+        return $this->timestampProvider->microsecondsTimestamp();
     }
 
     private function randomIntAsZeroFilledString(int $digits): string

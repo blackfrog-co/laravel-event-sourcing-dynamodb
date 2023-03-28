@@ -94,7 +94,7 @@ it('can generate 1 million ids in under 60 seconds on most systems', function ()
     $totalExecutionTimeSeconds = (hrtime(true) - $startExecutionTime) / 1e+9;
 
     expect($totalExecutionTimeSeconds)->toBeLessThan(60);
-})->group('performance', 'slow');
+});
 
 it('produces no duplicate ids over 50,000 iterations', function () {
     $iterations = 50_000;
@@ -111,7 +111,7 @@ it('produces no duplicate ids over 50,000 iterations', function () {
     }
 
     expect($duplicateFound)->toBeFalse();
-})->group('slow', 'collisions');
+});
 
 it('uses the provided integer timestamp as the start of each id', function () {
     $microTimeStamp = 1679836125000000;
@@ -141,7 +141,7 @@ it('never returns the same id twice from the same instance, even in the same mic
         $generatedIds[] = $id;
         $x++;
     }
-})->group('collisions');
+});
 
 it('may generate duplicate ids if two instances are used at the same microsecond', function () {
     //Fix the current microsecond time.
@@ -164,7 +164,7 @@ it('may generate duplicate ids if two instances are used at the same microsecond
 
     $countOfDuplicateIds = count(array_intersect($idsGenerated1, $idsGenerated2));
     expect($countOfDuplicateIds)->toBeInt()->toBeGreaterThan(0);
-})->group('collisions');
+});
 
 it('throws RuntimeException if the maximum unique values per microsecond is exceeded', function () {
     //Fix the current microsecond time.
@@ -181,8 +181,7 @@ it('throws RuntimeException if the maximum unique values per microsecond is exce
         $this->idGenerator->generateId();
         $x++;
     }
-})->throws(RuntimeException::class)
-    ->group('collisions');
+})->throws(RuntimeException::class);
 
 it('generates ids even when the system date is a unix date early in the epoch', function () {
     //Fix the current time to 1 microsecond since the start of unix epoch.
@@ -196,7 +195,7 @@ it('generates ids even when the system date is a unix date early in the epoch', 
         ->toBeInt()
         ->toBeGreaterThan(1000000000000000000)
         ->toBeLessThan(PHP_INT_MAX);
-})->group('extreme-dates');
+});
 
 it('generates ids with reduced entropy when system date is 2286-11-20 onwards', function () {
     //From 2286-11-20 17:46:40 forward we roll over to get an extra digit in our micro time integer (10000000000000000)
@@ -224,7 +223,7 @@ it('generates ids with reduced entropy when system date is 2286-11-20 onwards', 
         expect($firstSeventeenDigitsOfId)->toEqual((string) $microTimeStamp);
         $x++;
     }
-})->group('extreme-dates');
+});
 
 it('throws an exception if the clock skews backwards by more than 2 seconds', function () {
     $timestampProvider = new ClockSkewTimestampProvider([1679836125000000, 1579836125000000]);

@@ -30,7 +30,7 @@ beforeEach(function () {
 });
 
 afterEach(function () {
-    $this->deleteTableIfExists('stored_events');
+    $this->deleteTables();
 });
 
 it('can store and retrieve an event', function () {

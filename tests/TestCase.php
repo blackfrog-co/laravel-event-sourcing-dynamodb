@@ -77,9 +77,14 @@ use Spatie\EventSourcing\EventSourcingServiceProvider;
 
     protected function createTables(): void
     {
+        $this->deleteTables();
+        $this->artisan(CreateTables::class);
+    }
+
+    protected function deleteTables(): void
+    {
         $this->deleteTableIfExists('stored_events');
         $this->deleteTableIfExists('snapshots');
-        $this->artisan(CreateTables::class);
     }
 
     protected function microTimeToInt(array $microTime): int

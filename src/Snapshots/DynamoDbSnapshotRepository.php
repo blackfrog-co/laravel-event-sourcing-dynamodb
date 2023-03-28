@@ -109,7 +109,6 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
             $dynamoItems[] = $this->dynamoMarshaler->marshalItem($snapshotPart);
         }
 
-        dump($snapshotPartsCount);
         (new Collection($dynamoItems))
             ->chunk(25)
             ->each(function (Collection $dynamoItems): void {

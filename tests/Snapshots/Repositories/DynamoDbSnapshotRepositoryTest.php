@@ -6,14 +6,11 @@ use BlackFrog\LaravelEventSourcingDynamodb\Snapshots\DynamoDbSnapshotRepository;
 use Random\Randomizer;
 use Spatie\EventSourcing\Snapshots\Snapshot;
 
-beforeAll(function () {
-});
-
 beforeEach(function () {
     $this->faker = Faker\Factory::create();
 
-    $this->largeStateData = [
-        'text' => $this->faker->paragraph(350000),    //100000 gives 19 parts
+    $this->stateData = [
+        'text' => $this->faker->paragraph(3),
         'int' => $this->faker->numberBetween(),
         'float' => $this->faker->randomFloat(),
         'int_64' => $this->faker->numberBetween(214748648, PHP_INT_MAX),
@@ -21,6 +18,7 @@ beforeEach(function () {
             'name' => $this->faker->name(),
             'uuid' => $this->faker->uuid(),
         ],
+        'another_object' => new Snapshot('adsdasdassd', 4, ['blah' => 'bloo']),
     ];
     $this->createTables();
 
@@ -35,16 +33,45 @@ afterEach(function () {
     $this->deleteTables();
 });
 
-it('can store and retrieve a snapshot', function () {
+it('can store and retrieve a snapshot with huge state data', function () {
     $uuid = $this->faker->uuid();
+    $stateData = $this->stateData;
+    //Add enough data to guarantee exceeding dynamo limitations and triggering
+    //our mechanics for breaking the data up into parts.
+    $stateData['text'] = $this->faker->paragraph(350000);
     $snapshot = new Snapshot(
         $uuid,
         1,
-        $this->largeStateData
+        $stateData
     );
 
     $this->snapshotRepository->persist($snapshot);
 
     $snapshot = $this->snapshotRepository->retrieve($uuid);
-    //TODO: assertions.
+
+    expect($snapshot)
+        ->toBeInstanceOf(Snapshot::class)
+        ->and($snapshot->aggregateUuid)->toEqual($uuid)
+        ->and($snapshot->aggregateVersion)->toEqual(1)
+        ->and($snapshot->state)->toEqual($stateData);
+});
+
+it('can store and retrieve a snapshot with small state data', function () {
+    $uuid = $this->faker->uuid();
+
+    $snapshot = new Snapshot(
+        $uuid,
+        1,
+        $this->stateData
+    );
+
+    $this->snapshotRepository->persist($snapshot);
+
+    $snapshot = $this->snapshotRepository->retrieve($uuid);
+
+    expect($snapshot)
+        ->toBeInstanceOf(Snapshot::class)
+        ->and($snapshot->aggregateUuid)->toEqual($uuid)
+        ->and($snapshot->aggregateVersion)->toEqual(1)
+        ->and($snapshot->state)->toEqual($this->stateData);
 });

@@ -58,7 +58,7 @@ class IdGenerator
 
         //If the clock has been changed backwards since the last id was generated, wait for it to catch up
         if ($timestamp < $this->timestamp) {
-            $this->handleClockSkew($timestamp);
+            return $this->handleClockSkew($timestamp);
         }
 
         //We want enough random digits to create an integer id that fits inside INT_MAX on 64bit PHP.
@@ -91,7 +91,7 @@ class IdGenerator
         return $id;
     }
 
-    private function handleClockSkew(int $timestamp): void
+    private function handleClockSkew(int $timestamp): int
     {
         $skewMicroseconds = $this->timestamp - $timestamp;
 
@@ -102,6 +102,8 @@ class IdGenerator
         }
 
         usleep($skewMicroseconds);
+
+        return $this->generateId();
     }
 
     private function microsecondsTimestamp(): int

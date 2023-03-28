@@ -17,6 +17,23 @@ beforeAll(function () {
             return $this->microsecondsTimestamp;
         }
     }
+
+    class ClockSkewTimestampProvider implements TimestampProvider
+    {
+        public int $counter = 0;
+
+        public function __construct(protected array $microsecondsTimestamps)
+        {
+        }
+
+        public function microsecondsTimestamp(): int
+        {
+            $timestamp = $this->microsecondsTimestamps[$this->counter];
+            $this->counter++;
+
+            return $timestamp;
+        }
+    }
 });
 
 beforeEach(function () {
@@ -208,3 +225,17 @@ it('generates ids with reduced entropy when system date is 2286-11-20 onwards', 
         $x++;
     }
 })->group('extreme-dates');
+
+it('throws an exception if the clock skews backwards by more than 2 seconds', function () {
+    $timestampProvider = new ClockSkewTimestampProvider([1679836125000000, 1579836125000000]);
+    $idGenerator = new IdGenerator(new Randomizer(), $timestampProvider);
+    $idGenerator->generateId();
+    $idGenerator->generateId();
+})->throws(RuntimeException::class);
+
+it('it waits for time to catch up if the clock skews backwards by less than 2 seconds', function () {
+    $timestampProvider = new ClockSkewTimestampProvider([1679836125000000, 1679836124000000, 1679836125000000]);
+    $idGenerator = new IdGenerator(new Randomizer(), $timestampProvider);
+    $idGenerator->generateId();
+    $idGenerator->generateId();
+});

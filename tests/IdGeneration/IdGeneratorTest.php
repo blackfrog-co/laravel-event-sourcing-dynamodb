@@ -232,9 +232,19 @@ it('throws an exception if the clock skews backwards by more than 2 seconds', fu
     $idGenerator->generateId();
 })->throws(RuntimeException::class);
 
-it('it waits for time to catch up if the clock skews backwards by less than 2 seconds', function () {
-    $timestampProvider = new ClockSkewTimestampProvider([1679836125000000, 1679836124000000, 1679836125000000]);
+it('it sleeps for time to catch up if the clock skews backwards by less than 2 seconds', function () {
+    $currentTime = 1679836125000000;
+    $backwardsTime = 1679836124000000;
+
+    $timestampProvider = new ClockSkewTimestampProvider([$currentTime, $backwardsTime, $currentTime]);
     $idGenerator = new IdGenerator(new Randomizer(), $timestampProvider);
-    $idGenerator->generateId();
-    $idGenerator->generateId();
+
+    $id1 = $idGenerator->generateId();
+    $id2 = $idGenerator->generateId();
+
+    //Neither Id contains the time that skewed backwards.
+    expect((string) $id1)->toContain((string) $currentTime)
+        ->and((string) $id1)->not()->toContain((string) $backwardsTime)
+        ->and((string) $id2)->toContain((string) $currentTime)
+        ->and((string) $id1)->not()->toContain((string) $backwardsTime);
 });

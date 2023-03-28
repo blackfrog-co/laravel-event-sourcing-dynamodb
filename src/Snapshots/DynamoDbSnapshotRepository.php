@@ -35,7 +35,7 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
             'ProjectionExpression' => 'id, parts_count, aggregate_version',
         ]);
 
-        if ($mostRecentSnapshotResult->get('Count') == 0) {
+        if ($mostRecentSnapshotResult->get('Count') === 0) {
             return null;
         }
 
@@ -48,32 +48,29 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
     {
         $keys = (new Collection(range(0, $partsCount - 1)))
             ->transform(function (int $item) use ($id, $aggregateUuid): array {
+                $partForId = str_pad((string) $item, 2, '0', STR_PAD_LEFT);
+
                 return [
                     'aggregate_uuid' => ['S' => $aggregateUuid],
-                    'id_part' => ['S' => "{$id}_{$item}"],
+                    'id_part' => ['S' => "{$id}_{$partForId}"],
                 ];
             });
 
         $snapshotParts = new Collection;
 
-        $keys->chunk(25)
-            ->each(function (Collection $keys) use (&$snapshotParts): void {
-                $batchGetResult = $this->dynamo->batchGetItem([
-                    $this->table => [
-                        'Keys' => $keys->toArray(),
-                    ],
-                ]);
+        //TODO: Reattempt batch get item implementation.
+        $keys->each(function (array $keys) use (&$snapshotParts): void {
+            $getItemResult = $this->dynamo->getItem([
+                'TableName' => $this->table,
+                'Key' => $keys,
+            ]);
 
-                $items = $batchGetResult->search("Responses.{$this->table}");
-
-                foreach ($items as $item) {
-                    $item = $this->dynamoMarshaler->unmarshalItem($item);
-                    $snapshotParts->put(
-                        $item['part'],
-                        $item['data'],
-                    );
-                }
-            });
+            $item = $this->dynamoMarshaler->unmarshalItem($getItemResult->get('Item'));
+            $snapshotParts->put(
+                $item['part'],
+                $item['data'],
+            );
+        });
 
         $snapshotParts = $snapshotParts->sortKeys();
 
@@ -95,7 +92,8 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
         foreach ($serializedStateParts as $statePart) {
             $snapshotParts[] = [
                 'id' => $id,
-                'aggregated_uuid' => $aggregateUuid,
+                'aggregate_uuid' => $aggregateUuid,
+                'aggregate_version' => $snapshot->aggregateVersion,
                 'data' => $statePart,
             ];
         }
@@ -105,11 +103,13 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
 
         foreach ($snapshotParts as $index => $snapshotPart) {
             $snapshotPart['part'] = $index;
-            $snapshotPart['id_part'] = "{$id}_{$index}";
+            $partForId = str_pad((string) $index, 2, '0', STR_PAD_LEFT);
+            $snapshotPart['id_part'] = "{$id}_{$partForId}";
             $snapshotPart['parts_count'] = $snapshotPartsCount;
             $dynamoItems[] = $this->dynamoMarshaler->marshalItem($snapshotPart);
         }
 
+        dump($snapshotPartsCount);
         (new Collection($dynamoItems))
             ->chunk(25)
             ->each(function (Collection $dynamoItems): void {
@@ -118,10 +118,11 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
                 ]];
 
                 $dynamoItems->each(function ($dynamoItem) use (&$batchRequest): void {
-                    $batchRequest['requestItems'][$this->table][] = $dynamoItem;
+                    $batchRequest['RequestItems'][$this->table][] = ['PutRequest' => ['Item' => $dynamoItem]];
                 });
 
-                $this->dynamo->batchWriteItem($batchRequest);
+                $response = $this->dynamo->batchWriteItem($batchRequest);
+                //TODO: handle unprocessed items in response
             });
 
         return $snapshot;

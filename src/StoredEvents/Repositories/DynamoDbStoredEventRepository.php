@@ -25,6 +25,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
         private DynamoDbClient $dynamo,
         private IdGenerator $idGenerator,
         private Marshaler $dynamoMarshaler,
+        private JsonEventSerializer $eventSerializer,
     ) {
         $this->table = (string) config(
             'event-sourcing-dynamodb.stored_event_table',
@@ -206,14 +207,22 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function persist(ShouldBeStored $event, string $uuid = null): StoredEvent
     {
+        return $this->writeStoredEventToDynamo(
+            $this->createStoredEvent(
+                event: $event,
+                uuid: $uuid
+            )
+        );
+    }
+
+    private function createStoredEvent(ShouldBeStored $event, string $uuid = null): StoredEvent
+    {
         $id = $this->idGenerator->generateId();
-        $createdAt = Carbon::now();
+        $createdAt = $event->createdAt() ?? Carbon::now();
 
-        $eventSerializer = new JsonEventSerializer();
-
-        $storedEvent = new StoredEvent([
+        return new StoredEvent([
             'id' => $id,
-            'event_properties' => $eventSerializer->serialize(clone $event),
+            'event_properties' => $this->eventSerializer->serialize(clone $event),
             'aggregate_uuid' => $uuid,
             'aggregate_version' => $event->aggregateRootVersion() ?? 1,
             'event_version' => $event->eventVersion(),
@@ -225,13 +234,9 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
             ),
             'created_at' => $createdAt->getTimestamp(),
         ]);
-
-        $this->writeStoredEventToDynamo($storedEvent);
-
-        return $storedEvent;
     }
 
-    private function writeStoredEventToDynamo(StoredEvent $storedEvent): void
+    private function writeStoredEventToDynamo(StoredEvent $storedEvent): StoredEvent
     {
         $storedEventArray = $storedEvent->toArray();
 
@@ -248,6 +253,8 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
         ];
 
         $this->dynamo->putItem($putItemRequest);
+
+        return $storedEvent;
     }
 
     public function persistMany(array $events, string $uuid = null): LazyCollection

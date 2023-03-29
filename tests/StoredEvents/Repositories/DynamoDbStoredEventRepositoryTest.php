@@ -7,6 +7,7 @@ use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\Repositories\DynamoDbSto
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 use Random\Randomizer;
+use Spatie\EventSourcing\EventSerializers\JsonEventSerializer;
 use Spatie\EventSourcing\StoredEvents\ShouldBeStored;
 use Spatie\EventSourcing\StoredEvents\StoredEvent;
 
@@ -26,7 +27,8 @@ beforeEach(function () {
     $this->storedEventRepository = new DynamoDbStoredEventRepository(
         $this->getDynamoDbClient(),
         new IdGenerator(new Randomizer(), new MicroTimeTimestampProvider()),
-        new Marshaler()
+        new Marshaler(),
+        new JsonEventSerializer(),
     );
 });
 

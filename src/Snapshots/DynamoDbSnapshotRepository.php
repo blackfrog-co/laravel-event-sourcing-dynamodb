@@ -19,6 +19,7 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
         private DynamoDbClient $dynamo,
         private IdGenerator $idGenerator,
         private Marshaler $dynamoMarshaler,
+        private StateSerializer $stateSerializer
     ) {
         $this->table = config(
             'event-sourcing-dynamodb.snapshot_table',
@@ -74,10 +75,7 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
             );
         });
 
-        $snapshotParts = $snapshotParts->sortKeys();
-
-        $stateDataSerialized = $this->combineSerializedState($snapshotParts->toArray());
-        $stateData = $this->deserializeState($stateDataSerialized);
+        $stateData = $this->stateSerializer->combineAndDeserializeState($snapshotParts->sortKeys()->toArray());
 
         return new Snapshot($aggregateUuid, $aggregateVersion, $stateData);
     }
@@ -87,8 +85,7 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
         $id = $this->idGenerator->generateId();
         $aggregateUuid = $snapshot->aggregateUuid;
 
-        $serializedState = $this->serializeState($snapshot->state);
-        $serializedStateParts = $this->splitSerializedState($serializedState);
+        $serializedStateParts = $this->stateSerializer->serializeAndSplitState($snapshot->state);
 
         $snapshotParts = [];
         foreach ($serializedStateParts as $statePart) {
@@ -127,25 +124,5 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
             });
 
         return $snapshot;
-    }
-
-    private function splitSerializedState(string $state): array
-    {
-        return str_split($state, 380_000);
-    }
-
-    private function combineSerializedState(array $stateData)
-    {
-        return implode('', $stateData);
-    }
-
-    private function serializeState(mixed $state): string
-    {
-        return base64_encode(serialize($state));
-    }
-
-    private function deserializeState(string $state): mixed
-    {
-        return unserialize(base64_decode($state));
     }
 }

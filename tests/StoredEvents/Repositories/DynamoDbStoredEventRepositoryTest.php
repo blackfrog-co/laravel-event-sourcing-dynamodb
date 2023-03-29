@@ -49,8 +49,22 @@ it('can store and retrieve an event', function () {
 
     $retrievedEvent2 = $this->storedEventRepository->find($storedEvent2->id);
 
-    expect($retrievedEvent2)->toEqual($storedEvent2);
-    expect($retrievedEvent2)->not()->toEqual($storedEvent);
+    expect($retrievedEvent2)->toEqual($storedEvent2)
+        ->and($retrievedEvent2)->not()->toEqual($storedEvent);
+});
+
+it('can store many events', function () {
+    $aggregateUuid = Uuid::uuid4();
+    $eventOne = new DummyStorableEvent('blahh');
+    $eventTwo = new DummyStorableEvent('yahhh');
+
+    $this->storedEventRepository->persistMany([$eventOne, $eventTwo], $aggregateUuid);
+
+    $retrievedEvents = $this->storedEventRepository->retrieveAll($aggregateUuid);
+
+    expect($retrievedEvents->count())->toEqual(2)
+        ->and($retrievedEvents->first()->event->message)->toEqual($eventOne->message)
+        ->and($retrievedEvents->last()->event->message)->toEqual($eventTwo->message);
 });
 
 it('retrieves all events in order', function () {

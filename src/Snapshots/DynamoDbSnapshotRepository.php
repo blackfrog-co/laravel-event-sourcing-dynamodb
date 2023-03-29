@@ -42,9 +42,18 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
             return null;
         }
 
-        $idItem = $this->dynamoMarshaler->unmarshalItem($mostRecentSnapshotResult->get('Items')[0]);
+        //TODO: in the case that parts_count is 0 we could avoid making further requests.
 
-        return $this->retrieveById($idItem['id'], $aggregateUuid, $idItem['aggregate_version'], $idItem['parts_count']);
+        $idItem = $this->dynamoMarshaler->unmarshalItem(
+            data: $mostRecentSnapshotResult->get('Items')[0]
+        );
+
+        return $this->retrieveById(
+            id: $idItem['id'],
+            aggregateUuid: $aggregateUuid,
+            aggregateVersion: $idItem['aggregate_version'],
+            partsCount: $idItem['parts_count']
+        );
     }
 
     private function retrieveById(int $id, string $aggregateUuid, int $aggregateVersion, int $partsCount): Snapshot
@@ -61,21 +70,26 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
 
         $snapshotParts = new Collection;
 
-        //TODO: Reattempt batch get item implementation.
-        $keys->each(function (array $keys) use (&$snapshotParts): void {
-            $getItemResult = $this->dynamo->getItem([
-                'TableName' => $this->table,
-                'Key' => $keys,
-            ]);
+        //TODO: Reattempt a batch get item implementation.
+        $keys->each(
+            function (array $keys) use (&$snapshotParts): void {
+                $getItemResult = $this->dynamo->getItem([
+                    'TableName' => $this->table,
+                    'Key' => $keys,
+                ]);
 
-            $item = $this->dynamoMarshaler->unmarshalItem($getItemResult->get('Item'));
-            $snapshotParts->put(
-                $item['part'],
-                $item['data'],
-            );
-        });
+                $item = $this->dynamoMarshaler->unmarshalItem($getItemResult->get('Item'));
 
-        $stateData = $this->stateSerializer->combineAndDeserializeState($snapshotParts->sortKeys()->toArray());
+                $snapshotParts->put(
+                    $item['part'],
+                    $item['data'],
+                );
+            }
+        );
+
+        $stateData = $this->stateSerializer->combineAndDeserializeState(
+            stateParts: $snapshotParts->sortKeys()->toArray()
+        );
 
         return new Snapshot($aggregateUuid, $aggregateVersion, $stateData);
     }
@@ -83,33 +97,26 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
     public function persist(Snapshot $snapshot): Snapshot
     {
         $id = $this->idGenerator->generateId();
-        $aggregateUuid = $snapshot->aggregateUuid;
 
         $serializedStateParts = $this->stateSerializer->serializeAndSplitState($snapshot->state);
 
-        $snapshotParts = [];
-        foreach ($serializedStateParts as $statePart) {
-            $snapshotParts[] = [
-                'id' => $id,
-                'aggregate_uuid' => $aggregateUuid,
-                'aggregate_version' => $snapshot->aggregateVersion,
-                'data' => $statePart,
-            ];
-        }
-        $snapshotPartsCount = count($snapshotParts);
+        $partsCount = count($serializedStateParts);
 
-        $dynamoItems = [];
+        $dynamoItems = new Collection();
 
-        foreach ($snapshotParts as $index => $snapshotPart) {
-            $snapshotPart['part'] = $index;
-            $partForId = str_pad((string) $index, 2, '0', STR_PAD_LEFT);
-            $snapshotPart['id_part'] = "{$id}_{$partForId}";
-            $snapshotPart['parts_count'] = $snapshotPartsCount;
-            $dynamoItems[] = $this->dynamoMarshaler->marshalItem($snapshotPart);
+        foreach ($serializedStateParts as $index => $statePart) {
+            $snapshotPart = new SnapshotPart(
+                id: $id,
+                aggregateUuid: $snapshot->aggregateUuid,
+                aggregateVersion: $snapshot->aggregateVersion,
+                part: $index,
+                partsCount: $partsCount,
+                data: $statePart
+            );
+            $dynamoItems->push($this->dynamoMarshaler->marshalItem($snapshotPart->toArray()));
         }
 
-        (new Collection($dynamoItems))
-            ->chunk(25)
+        $dynamoItems->chunk(25)
             ->each(function (Collection $dynamoItems): void {
                 $batchRequest = ['RequestItems' => [
                     $this->table => [],

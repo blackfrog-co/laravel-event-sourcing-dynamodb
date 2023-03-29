@@ -218,7 +218,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
     private function createStoredEvent(ShouldBeStored $event, string $uuid = null): StoredEvent
     {
         $id = $this->idGenerator->generateId();
-        $createdAt = $event->createdAt() ?? Carbon::now();
+        $createdAt = Carbon::now();
 
         return new StoredEvent([
             'id' => $id,
@@ -238,6 +238,18 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     private function writeStoredEventToDynamo(StoredEvent $storedEvent): StoredEvent
     {
+        $putItemRequest = [
+            'TableName' => config('event-sourcing-dynamodb.stored-event-table'),
+            'Item' => $this->storedEventToDynamoDbItem($storedEvent),
+        ];
+
+        $this->dynamo->putItem($putItemRequest);
+
+        return $storedEvent;
+    }
+
+    private function storedEventToDynamoDbItem(StoredEvent $storedEvent): array
+    {
         $storedEventArray = $storedEvent->toArray();
 
         //Fix an incorrect types in StoredEvent that upset DynamoDb.
@@ -247,14 +259,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
         //Duplicate id to work around dynamo indexing limitations, allowing consistent ordering.
         $storedEventArray['sort_id'] = $storedEventArray['id'];
 
-        $putItemRequest = [
-            'TableName' => config('event-sourcing-dynamodb.stored-event-table'),
-            'Item' => $this->dynamoMarshaler->marshalItem($storedEventArray),
-        ];
-
-        $this->dynamo->putItem($putItemRequest);
-
-        return $storedEvent;
+        return $this->dynamoMarshaler->marshalItem($storedEventArray);
     }
 
     public function persistMany(array $events, string $uuid = null): LazyCollection

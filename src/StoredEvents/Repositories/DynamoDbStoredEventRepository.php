@@ -272,7 +272,6 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function persistMany(array $events, string $uuid = null): LazyCollection
     {
-        //TODO: Test coverage
         // TODO: A more efficient DynamoDb implementation is possible with batching.
         $storedEvents = [];
 

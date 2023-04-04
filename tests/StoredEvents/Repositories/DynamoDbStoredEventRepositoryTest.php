@@ -287,6 +287,12 @@ it('can get the latest aggregate version for an aggregate root uuid', function (
     expect($latestAggregateVersion)->toBeInt()->toEqual(5);
 });
 
+it('returns 0 for latest aggregate version if no events exist', function () {
+    $aggregateRootUuid = Uuid::uuid4();
+    $latestAggregateVersion = $this->storedEventRepository->getLatestAggregateVersion($aggregateRootUuid);
+    expect($latestAggregateVersion)->toBeInt()->toEqual(0);
+});
+
 it('can retrieve events after a version for an aggregate root uuid', function () {
     $aggregateRootUuid = Uuid::uuid4();
     $event = new DummyStorableEvent('yahhh');

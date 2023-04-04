@@ -297,6 +297,10 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
             'Limit' => 1,
         ]);
 
+        if ($result->get('Count') === 0) {
+            return 0;
+        }
+
         $item = $result->get('Items')[0];
 
         $item = $this->dynamoMarshaler->unmarshalItem($item);

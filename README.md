@@ -22,6 +22,7 @@ Pre-Release TODOs:
 - Ensure package config is correct and install journey is easy and clear.
 - Provide an interface to allow users to replace IdGenerator with their own.
 - Allow changing the Timestamp provider implementation in config.
+- Copy and modify any parts of the main package test suite that can give more end to end coverage.
 - Write some basic docs
 
 ## Installation

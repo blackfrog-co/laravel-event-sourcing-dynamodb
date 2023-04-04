@@ -6,12 +6,12 @@ namespace BlackFrog\LaravelEventSourcingDynamodb\StoredEvents;
 
 use Illuminate\Contracts\Support\Arrayable;
 
-class MetaData implements Arrayable
+readonly class MetaData implements Arrayable
 {
     public function __construct(
-        public readonly array $metaData,
-        public readonly string $createdAt,
-        public readonly int $id,
+        public array $metaData,
+        public string $createdAt,
+        public int $id,
     ) {
     }
 

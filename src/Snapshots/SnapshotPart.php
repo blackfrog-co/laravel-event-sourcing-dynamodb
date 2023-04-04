@@ -6,17 +6,17 @@ namespace BlackFrog\LaravelEventSourcingDynamodb\Snapshots;
 
 use Illuminate\Contracts\Support\Arrayable;
 
-class SnapshotPart implements Arrayable
+readonly class SnapshotPart implements Arrayable
 {
-    public readonly string $idPart;
+    public string $idPart;
 
     public function __construct(
-        public readonly int $id,
-        public readonly string $aggregateUuid,
-        public readonly int $aggregateVersion,
-        public readonly int $part,
-        public readonly int $partsCount,
-        public readonly mixed $data,
+        public int $id,
+        public string $aggregateUuid,
+        public int $aggregateVersion,
+        public int $part,
+        public int $partsCount,
+        public mixed $data,
     ) {
         $partForId = str_pad((string) $this->part, 2, '0', STR_PAD_LEFT);
         $this->idPart = "{$this->id}_{$partForId}";

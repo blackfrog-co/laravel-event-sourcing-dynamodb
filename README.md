@@ -7,7 +7,7 @@
 
 ! Work In Progress ! Not yet suitable for use.
 
-A DynamoDB driver for spatie/laravel-event-sourcing.
+A DynamoDB driver for `spatie/laravel-event-sourcing` allowing for a serverless approach to data storage.
 
 If you're interested in this project please leave a note in the discussions section, and I'll let you know when the first
 versioned release drops.
@@ -38,19 +38,10 @@ composer test
 
 Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
 
-## Contributing
-
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
-
-## Security Vulnerabilities
-
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
-
 ## Credits
 
 - [BlackFrog Software Consultancy](https://blackfrog.co)
 - [Shaun Keating](https://github.com/shkeats)
-- [All Contributors](../../contributors)
 
 ## License
 

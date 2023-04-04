@@ -179,7 +179,7 @@ it('can count all events for an aggregate root uuid starting from an event id', 
     $eventCount = 900;
     $x = 1;
 
-    //We use a large string to guarantee pagination in response from dynamodb
+    //We use a large string to guarantee pagination in responses from dynamodb
     $randomString = Str::random(6650);
     $uuids = [Uuid::uuid4(), Uuid::uuid4(), Uuid::uuid4(), Uuid::uuid4()];
 

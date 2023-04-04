@@ -10,6 +10,7 @@ use Aws\ResultPaginator;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
 use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\MetaData;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Arr;
 use Illuminate\Support\LazyCollection;
 use Spatie\EventSourcing\EventSerializers\JsonEventSerializer;
@@ -258,6 +259,13 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
         //Duplicate id to work around dynamo indexing limitations, allowing consistent ordering.
         $storedEventArray['sort_id'] = $storedEventArray['id'];
+
+        //Format carbon object for storage. Temporary bodge, this needs more work.
+        $metaDataCreatedAt = $storedEventArray['meta_data']['created-at'];
+        if ($metaDataCreatedAt instanceof CarbonInterface) {
+            $metaDataCreatedAt = (string) $metaDataCreatedAt->timestamp;
+        }
+        $storedEventArray['meta_data']['created-at'] = $metaDataCreatedAt;
 
         return $this->dynamoMarshaler->marshalItem($storedEventArray);
     }

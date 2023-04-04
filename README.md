@@ -11,6 +11,19 @@ versioned release drops.
 
 Requires 64bit PHP 8.2 due to the way it generates unique ids.
 
+Pre-Release TODOs:
+
+- Reduce the number of Global Secondary Indexes (currently 3) for stored events (if possible).
+- Use more efficient batch get requests for `DynamoDbSnapshotRepository::retrieveById()`.
+- Use more efficient batch requests for `DynamoDbStoredEventRepoistory::persistMany()`.
+- Handle possibility of DynamoDb returning unprocessed items in batch put requests.
+- Handling for manageable DynamoDb errors.
+- A cleaner approach to handling meta data.
+- Ensure package config is correct and install journey is easy and clear.
+- Provide an interface to allow users to replace IdGenerator with their own.
+- Allow changing the Timestamp provider implementation in config.
+
+
 ## Installation
 
 You can install the package via composer:

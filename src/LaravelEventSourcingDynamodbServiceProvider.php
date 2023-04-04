@@ -9,6 +9,7 @@ use BlackFrog\LaravelEventSourcingDynamodb\Commands\CreateTables;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\MicroTimeTimestampProvider;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\TimestampProvider;
+use BlackFrog\LaravelEventSourcingDynamodb\Snapshots\DynamoDbSnapshotRepository;
 use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\Repositories\DynamoDbStoredEventRepository;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -27,11 +28,11 @@ class LaravelEventSourcingDynamodbServiceProvider extends PackageServiceProvider
 
         $this->app->bind(TimestampProvider::class, MicroTimeTimestampProvider::class);
 
-        $this->app->when(DynamoDbStoredEventRepository::class)
-            ->needs(DynamoDbClient::class)
-            ->give($dynamoDbClient);
-
-        $this->app->when(CreateTables::class)
+        $this->app->when([
+            DynamoDbStoredEventRepository::class,
+            DynamoDbSnapshotRepository::class,
+            CreateTables::class,
+        ])
             ->needs(DynamoDbClient::class)
             ->give($dynamoDbClient);
     }

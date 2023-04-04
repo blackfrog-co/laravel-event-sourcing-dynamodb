@@ -4,6 +4,8 @@
 
 A DynamoDB driver for `spatie/laravel-event-sourcing` allowing for a serverless approach to data storage.
 
+This package provides a DynamoDB implementation for `StoredEventRepository` and `SnapshotRepository`.
+
 If you're interested in this project please leave a note in the discussions section, and I'll let you know when the first
 versioned release drops.
 

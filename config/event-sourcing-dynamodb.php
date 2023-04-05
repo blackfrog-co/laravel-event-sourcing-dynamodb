@@ -47,7 +47,7 @@ return [
                     ['AttributeName' => 'aggregate_uuid', 'KeyType' => 'HASH'],
                     ['AttributeName' => 'aggregate_version', 'KeyType' => 'RANGE'],
                 ],
-                'Projection' => ['ProjectionType' => 'ALL'],
+                'Projection' => ['ProjectionType' => 'KEYS_ONLY'],
             ],
         ],
         'BillingMode' => 'PAY_PER_REQUEST',

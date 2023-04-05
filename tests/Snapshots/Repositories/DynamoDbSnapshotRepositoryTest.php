@@ -78,3 +78,39 @@ it('can store and retrieve a snapshot with small state data', function () {
         ->and($snapshot->aggregateVersion)->toEqual(1)
         ->and($snapshot->state)->toEqual($this->stateData);
 });
+
+it('can retrieves the correct snapshot when multiple snapshots exists', function () {
+    $targetUuid = $this->faker->uuid();
+
+    $this->snapshotRepository->persist(new Snapshot(
+        $this->faker->uuid(),
+        2,
+        $this->stateData
+    ));
+
+    $this->snapshotRepository->persist(new Snapshot(
+        $this->faker->uuid(),
+        4,
+        $this->stateData
+    ));
+
+    $this->snapshotRepository->persist(new Snapshot(
+        $targetUuid,
+        1,
+        $this->stateData
+    ));
+
+    $this->snapshotRepository->persist(new Snapshot(
+        $this->faker->uuid(),
+        3,
+        $this->stateData
+    ));
+
+    $snapshot = $this->snapshotRepository->retrieve($targetUuid);
+
+    expect($snapshot)
+        ->toBeInstanceOf(Snapshot::class)
+        ->and($snapshot->aggregateUuid)->toEqual($targetUuid)
+        ->and($snapshot->aggregateVersion)->toEqual(1)
+        ->and($snapshot->state)->toEqual($this->stateData);
+});

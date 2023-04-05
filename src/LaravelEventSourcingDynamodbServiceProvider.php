@@ -49,7 +49,6 @@ class LaravelEventSourcingDynamodbServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-event-sourcing-dynamodb')
             ->hasConfigFile()
-            ->hasViews()
             ->hasCommand(CreateTables::class);
     }
 }

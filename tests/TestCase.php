@@ -6,21 +6,12 @@ use AllowDynamicProperties;
 use Aws\DynamoDb\DynamoDbClient;
 use BlackFrog\LaravelEventSourcingDynamodb\Commands\CreateTables;
 use BlackFrog\LaravelEventSourcingDynamodb\LaravelEventSourcingDynamodbServiceProvider;
-use Illuminate\Database\Eloquent\Factories\Factory;
+use BlackFrog\LaravelEventSourcingDynamodb\Tables\TableManager;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Spatie\EventSourcing\EventSourcingServiceProvider;
 
 #[AllowDynamicProperties] class TestCase extends Orchestra
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'BlackFrog\\LaravelEventSourcingDynamodb\\Database\\Factories\\'.class_basename($modelName).'Factory'
-        );
-    }
-
     protected function getPackageProviders($app)
     {
         return [
@@ -30,19 +21,6 @@ use Spatie\EventSourcing\EventSourcingServiceProvider;
 
     public function getEnvironmentSetUp($app)
     {
-        config()->set('database.default', 'testing');
-
-        config()->set('database.connections.dynamodb', [
-            'driver' => 'dynamodb',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
-            'token' => env('AWS_SESSION_TOKEN', null),
-            'endpoint' => env('DYNAMODB_ENDPOINT', null),
-            'prefix' => '', // table prefix
-            'database' => 'something',
-        ]);
-
         $app->register(EventSourcingServiceProvider::class);
     }
 
@@ -51,34 +29,21 @@ use Spatie\EventSourcing\EventSourcingServiceProvider;
         return new DynamoDbClient(config('event-sourcing-dynamodb.dynamodb-client'));
     }
 
-    protected function resetDynamoTable(string $tableName = null)
+    protected function getTableManager(): TableManager
     {
-        $tableName = $tableName ?? 'stored_events';
-
-        $this->deleteTableIfExists($tableName);
+        return new TableManager($this->getDynamoDbClient());
     }
 
     protected function deleteTableIfExists(string $name): void
     {
-        if ($this->tableExists($name)) {
-            $this->getDynamoDbClient()->deleteTable(
-                ['TableName' => $name]
-            );
-            $this->getDynamoDbClient()->waitUntil('TableNotExists', ['TableName' => $name]);
+        if ($this->getTableManager()->tableExists($name)) {
+            $this->getTableManager()->deleteTable($name);
         }
     }
 
-    protected function tableExists(string $name): bool
+    protected function createTables(bool $force = true): void
     {
-        $tableNames = $this->getDynamoDbClient()->listTables()->get('TableNames');
-
-        return in_array($name, $tableNames);
-    }
-
-    protected function createTables(): void
-    {
-        $this->deleteTables();
-        $this->artisan(CreateTables::class);
+        $this->artisan(CreateTables::class, ['--force' => $force]);
     }
 
     protected function deleteTables(): void

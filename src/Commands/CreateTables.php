@@ -13,7 +13,7 @@ class CreateTables extends Command
     public $signature = 'event-sourcing-dynamodb:create-tables
                          {--force : Delete the tables if they already exist}';
 
-    public $description = 'Creates the requisite DynamoDb tables for laravel event sourcing.';
+    public $description = 'Creates the DynamoDb tables for laravel event sourcing.';
 
     public function __construct(private readonly TableManager $tableManager)
     {

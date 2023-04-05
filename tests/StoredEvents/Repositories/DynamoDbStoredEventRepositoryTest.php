@@ -302,11 +302,11 @@ it('can retrieve events after a version for an aggregate root uuid', function ()
         ->persist($event, $aggregateRootUuid);
 
     $event->setAggregateRootVersion(3);
-    $event2 = $this->storedEventRepository
+    $this->storedEventRepository
         ->persist($event, $aggregateRootUuid);
 
     $event->setAggregateRootVersion(4);
-    $event3 = $this->storedEventRepository
+    $this->storedEventRepository
         ->persist($event, $aggregateRootUuid);
 
     $event->setAggregateRootVersion(4);
@@ -314,7 +314,7 @@ it('can retrieve events after a version for an aggregate root uuid', function ()
         ->persist($event, $aggregateRootUuid);
 
     $event->setAggregateRootVersion(1);
-    $event5 = $this->storedEventRepository
+    $this->storedEventRepository
         ->persist($event, $aggregateRootUuid);
 
     $events = $this->storedEventRepository->retrieveAllAfterVersion(3, $aggregateRootUuid);
@@ -322,5 +322,12 @@ it('can retrieve events after a version for an aggregate root uuid', function ()
     expect($events->count())->toEqual(3)
         ->and($events->first()->id)->toEqual($event1->id)
         ->and($events->last()->id)->toEqual($event4->id);
+});
 
+it('it returns an empty collection when no events after a version for an aggregate root uuid', function () {
+    $aggregateRootUuid = Uuid::uuid4();
+
+    $events = $this->storedEventRepository->retrieveAllAfterVersion(3, $aggregateRootUuid);
+
+    expect($events->count())->toEqual(0);
 });

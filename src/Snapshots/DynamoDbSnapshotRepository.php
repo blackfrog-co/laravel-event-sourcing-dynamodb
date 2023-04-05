@@ -16,10 +16,10 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
     protected string $table;
 
     public function __construct(
-        private DynamoDbClient $dynamo,
-        private IdGenerator $idGenerator,
-        private Marshaler $dynamoMarshaler,
-        private StateSerializer $stateSerializer
+        private readonly DynamoDbClient $dynamo,
+        private readonly IdGenerator $idGenerator,
+        private readonly Marshaler $dynamoMarshaler,
+        private readonly StateSerializer $stateSerializer
     ) {
         $this->table = config(
             'event-sourcing-dynamodb.snapshot_table',

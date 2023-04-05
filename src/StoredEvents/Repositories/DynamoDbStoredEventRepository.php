@@ -23,10 +23,10 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
     protected string $table;
 
     public function __construct(
-        private DynamoDbClient $dynamo,
-        private IdGenerator $idGenerator,
-        private Marshaler $dynamoMarshaler,
-        private JsonEventSerializer $eventSerializer,
+        private readonly DynamoDbClient $dynamo,
+        private readonly IdGenerator $idGenerator,
+        private readonly Marshaler $dynamoMarshaler,
+        private readonly JsonEventSerializer $eventSerializer,
     ) {
         $this->table = (string) config(
             'event-sourcing-dynamodb.stored_event_table',

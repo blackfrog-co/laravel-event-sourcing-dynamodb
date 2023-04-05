@@ -42,7 +42,7 @@ it('creates the snapshots table', function () {
     expect($tableNames)->toBeArray()->toContain('snapshots');
 });
 
-it('respects the snapshotss table name set in config', function () {
+it('respects the snapshots table name set in config', function () {
     $this->app['config']->set('event-sourcing-dynamodb.snapshot-table', 'potato_snapshots');
 
     $this->artisan(CreateTables::class)->assertOk();
@@ -58,4 +58,12 @@ it('returns an error if the tables already exist', function () {
 
     //Fail the second
     $this->artisan(CreateTables::class)->assertFailed();
+});
+
+it('deletes the tables and recreates them if the force option is set', function () {
+    //Create the first time.
+    $this->artisan(CreateTables::class)->assertOk();
+
+    //Fail the second
+    $this->artisan(CreateTables::class, ['--force' => true])->assertOk();
 });

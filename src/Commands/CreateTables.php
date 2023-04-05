@@ -1,70 +1,49 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BlackFrog\LaravelEventSourcingDynamodb\Commands;
 
-use Aws\DynamoDb\DynamoDbClient;
+use BlackFrog\LaravelEventSourcingDynamodb\Tables\Exceptions\TableAlreadyExists;
+use BlackFrog\LaravelEventSourcingDynamodb\Tables\TableManager;
 use Illuminate\Console\Command;
 
 class CreateTables extends Command
 {
-    public $signature = 'event-sourcing-dynamodb:create-tables';
+    public $signature = 'event-sourcing-dynamodb:create-tables
+                         {--force : Delete the tables if they already exist}';
 
     public $description = 'Creates the requisite DynamoDb tables for laravel event sourcing.';
 
-    public function __construct(private readonly DynamoDbClient $dynamoDbClient)
+    public function __construct(private readonly TableManager $tableManager)
     {
         parent::__construct();
     }
 
     public function handle(): int
     {
-        $createEventsTableRequest = config('event-sourcing-dynamodb.stored-event-table-definition');
-        $tableName = config('event-sourcing-dynamodb.stored-event-table');
-        $createEventsTableRequest['TableName'] = $tableName;
+        try {
+            $this->info('Creating stored event table...');
+            $this->tableManager->createTable(
+                config('event-sourcing-dynamodb.stored-event-table'),
+                config('event-sourcing-dynamodb.stored-event-table-definition'),
+                $this->option('force')
+            );
+            $this->comment('Stored event table created.');
 
-        if ($this->tableAlreadyExists($tableName)) {
-            $this->error("Table {$tableName} already exists.");
+            $this->info('Creating snapshot table...');
+            $this->tableManager->createTable(
+                config('event-sourcing-dynamodb.snapshot-table'),
+                config('event-sourcing-dynamodb.snapshot-table-definition'),
+                $this->option('force')
+            );
+            $this->comment('Snapshot table created.');
 
-            return self::FAILURE;
-        }
-
-        $this->info("Creating {$tableName} table");
-
-        $this->dynamoDbClient->createTable($createEventsTableRequest);
-
-        $this->info('Waiting for table creation to finish...');
-
-        $this->dynamoDbClient->waitUntil('TableExists', ['TableName' => $tableName]);
-
-        $this->comment('Events table creation finished.');
-
-        $createSnapshotsTableRequest = config('event-sourcing-dynamodb.snapshot-table-definition');
-        $tableName = config('event-sourcing-dynamodb.snapshot-table');
-        $createSnapshotsTableRequest['TableName'] = $tableName;
-
-        if ($this->tableAlreadyExists($tableName)) {
-            $this->error("Table {$tableName} already exists.");
+            return self::SUCCESS;
+        } catch (TableAlreadyExists $exception) {
+            $this->error($exception->getMessage());
 
             return self::FAILURE;
         }
-
-        $this->info("Creating {$tableName} table");
-
-        $this->dynamoDbClient->createTable($createSnapshotsTableRequest);
-
-        $this->info('Waiting for table creation to finish...');
-
-        $this->dynamoDbClient->waitUntil('TableExists', ['TableName' => $tableName]);
-
-        $this->comment('Snapshot table creation finished.');
-
-        return self::SUCCESS;
-    }
-
-    private function tableAlreadyExists(string $name): bool
-    {
-        $tableNames = $this->dynamoDbClient->listTables()->get('TableNames');
-
-        return in_array($name, $tableNames);
     }
 }

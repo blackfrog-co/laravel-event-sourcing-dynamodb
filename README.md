@@ -17,7 +17,7 @@ Pre-Release TODOs:
 - Use more efficient batch get requests for `DynamoDbSnapshotRepository::retrieveById()`.
 - Use more efficient batch requests for `DynamoDbStoredEventRepository::persistMany()`.
 - Handle possibility of DynamoDb returning unprocessed items in batch put requests.
-- Check/Fix event ordering in `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()`.
+- `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()` uses a filter expression which isn't cost efficient.
 - Handling for manageable DynamoDb errors.
 - A cleaner approach to handling meta data.
 - Ensure package config is correct and install journey is easy and clear.

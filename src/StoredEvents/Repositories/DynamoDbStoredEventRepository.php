@@ -147,12 +147,13 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
     {
         $resultPaginator = $this->dynamo->getPaginator('Query', [
             'TableName' => $this->table,
-            'IndexName' => 'aggregate_uuid-version-index',
-            'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid AND aggregate_version > :aggregate_version',
+            'IndexName' => 'aggregate_uuid-index',
+            'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid',
             'ExpressionAttributeValues' => [
                 ':aggregate_uuid' => ['S' => $aggregateUuid],
                 ':aggregate_version' => ['N' => $aggregateVersion],
             ],
+            'FilterExpression' => 'aggregate_version > :aggregate_version',
         ]);
 
         return $this->lazyCollectionFromPaginator($resultPaginator);

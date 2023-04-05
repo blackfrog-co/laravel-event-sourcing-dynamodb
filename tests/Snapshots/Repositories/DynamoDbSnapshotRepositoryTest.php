@@ -79,7 +79,7 @@ it('can store and retrieve a snapshot with small state data', function () {
         ->and($snapshot->state)->toEqual($this->stateData);
 });
 
-it('can retrieves the correct snapshot when multiple snapshots exists', function () {
+it('can retrieve the correct snapshot when multiple snapshots exists', function () {
     $targetUuid = $this->faker->uuid();
 
     $this->snapshotRepository->persist(new Snapshot(

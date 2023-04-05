@@ -15,8 +15,9 @@ Pre-Release TODOs:
 
 - Reduce the number of Global Secondary Indexes (currently 3) for stored events (if possible).
 - Use more efficient batch get requests for `DynamoDbSnapshotRepository::retrieveById()`.
-- Use more efficient batch requests for `DynamoDbStoredEventRepoistory::persistMany()`.
+- Use more efficient batch requests for `DynamoDbStoredEventRepository::persistMany()`.
 - Handle possibility of DynamoDb returning unprocessed items in batch put requests.
+- Check/Fix event ordering in `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()`.
 - Handling for manageable DynamoDb errors.
 - A cleaner approach to handling meta data.
 - Ensure package config is correct and install journey is easy and clear.

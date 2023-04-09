@@ -43,8 +43,6 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
             return null;
         }
 
-        //TODO: in the case that parts_count is 0 we could avoid making further requests.
-
         $idItem = $this->dynamoMarshaler->unmarshalItem(
             data: $mostRecentSnapshotResult->get('Items')[0]
         );
@@ -59,15 +57,7 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
 
     private function retrieveById(int $id, string $aggregateUuid, int $aggregateVersion, int $partsCount): Snapshot
     {
-        $keys = (new Collection(range(0, $partsCount - 1)))
-            ->transform(function (int $item) use ($id, $aggregateUuid): array {
-                $partForId = str_pad((string) $item, 2, '0', STR_PAD_LEFT);
-
-                return [
-                    'aggregate_uuid' => ['S' => $aggregateUuid],
-                    'id_part' => ['S' => "{$id}_{$partForId}"],
-                ];
-            });
+        $keys = $this->generateKeysForSnapshotParts(id: $id, aggregateUuid: $aggregateUuid, partsCount: $partsCount);
 
         $snapshotParts = new Collection;
 
@@ -76,13 +66,11 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
 
         while ($first || ! empty($unprocessedKeys)) {
 
-            $request = [
+            $result = $this->dynamo->batchGetItem([
                 'RequestItems' => [
-                    $this->table => ['Keys' => $first ? $keys->toArray() : $unprocessedKeys],
+                    $this->table => ['Keys' => $first ? $keys : $unprocessedKeys],
                 ],
-            ];
-
-            $result = $this->dynamo->batchGetItem($request);
+            ]);
 
             $first = false;
 
@@ -107,6 +95,21 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
         );
 
         return new Snapshot($aggregateUuid, $aggregateVersion, $stateData);
+    }
+
+    private function generateKeysForSnapshotParts(int $id, string $aggregateUuid, int $partsCount): array
+    {
+        return (new Collection(range(0, $partsCount - 1)))
+            ->transform(
+                function (int $partNumber) use ($id, $aggregateUuid): array {
+                    $partForId = str_pad((string) $partNumber, 2, '0', STR_PAD_LEFT);
+
+                    return [
+                        'aggregate_uuid' => ['S' => $aggregateUuid],
+                        'id_part' => ['S' => "{$id}_{$partForId}"],
+                    ];
+                }
+            )->toArray();
     }
 
     public function persist(Snapshot $snapshot): Snapshot

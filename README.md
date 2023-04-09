@@ -18,8 +18,7 @@ Requires 64bit PHP 8.2 due to the way it generates unique ids.
 TODOs:
 
 - Reduce the number of Global Secondary Indexes (currently 3, one KEYS_ONLY) for stored events, if possible. Currently,
-    `StoredEventRepository` methods `retrieveAll()` without an aggregate uuid, and `find()` create a problem for this. 
-- Use more efficient batch get requests for `DynamoDbSnapshotRepository::retrieveById()`.
+    `StoredEventRepository` methods `retrieveAll()` without an aggregate uuid, and `find()` create a problem for this.
 - Snapshot retrieval could make one less request in the case that there was no need to break the snapshot up into parts.
 - `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()` uses a filter expression which isn't cost-efficient.
 - Handling for manageable DynamoDb errors.

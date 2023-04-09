@@ -7,10 +7,15 @@ namespace BlackFrog\LaravelEventSourcingDynamodb\Snapshots;
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Marshaler;
 use Aws\DynamoDb\WriteRequestBatch;
+use Aws\ResultPaginator;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
+use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\MetaData;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\LazyCollection;
 use Spatie\EventSourcing\Snapshots\Snapshot;
 use Spatie\EventSourcing\Snapshots\SnapshotRepository;
+use Spatie\EventSourcing\StoredEvents\StoredEvent;
 
 class DynamoDbSnapshotRepository implements SnapshotRepository
 {
@@ -71,28 +76,88 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
 
         $snapshotParts = new Collection;
 
-        //TODO: Reattempt a batch get item implementation.
-        $keys->each(
-            function (array $keys) use (&$snapshotParts): void {
-                $getItemResult = $this->dynamo->getItem([
-                    'TableName' => $this->table,
-                    'Key' => $keys,
-                ]);
+        $batchGetItemRequest = [
+            'RequestItems' => [
+                $this->table => ['Keys' => $keys->toArray()],
+            ],
+        ];
 
-                $item = $this->dynamoMarshaler->unmarshalItem($getItemResult->get('Item'));
+        $first = true;
+        $unprocessedKeys = [];
 
-                $snapshotParts->put(
-                    $item['part'],
-                    $item['data'],
-                );
+        while ($first || ! empty($unprocessedKeys)) {
+            $first = false;
+            if (! empty($unprocessedKeys)) {
+                $batchGetItemRequest = [
+                    'RequestItems' => [
+                        $this->table => ['Keys' => $unprocessedKeys],
+                    ],
+                ];
             }
-        );
+            $result = $this->dynamo->batchGetItem($batchGetItemRequest);
+            $unprocessedKeys = $result->get('UnprocessedKeys')[$this->table] ?? [];
+            $snapshotItems = collect($result->get('Responses')[$this->table]);
+
+            $snapshotItems->each(
+                function (array $item) use (&$snapshotParts): void {
+                    $item = $this->dynamoMarshaler->unmarshalItem($item);
+
+                    $snapshotParts->put(
+                        $item['part'],
+                        $item['data'],
+                    );
+                }
+            );
+        }
 
         $stateData = $this->stateSerializer->combineAndDeserializeState(
             stateParts: $snapshotParts->sortKeys()->toArray()
         );
 
         return new Snapshot($aggregateUuid, $aggregateVersion, $stateData);
+    }
+
+    private function retrieveSnapshotParts(string $uuid): LazyCollection
+    {
+        $resultPaginator = $this->dynamo->batchGetItem([
+
+        ]);
+
+        return $this->lazyCollectionFromPaginator($resultPaginator);
+    }
+
+    private function lazyCollectionFromPaginator(ResultPaginator $paginator): LazyCollection
+    {
+        return LazyCollection::make(
+            function () use (&$paginator) {
+                while ($result = $paginator->current()) {
+                    foreach ($result->get('Items') as $item) {
+                        $dynamoItem = $this->dynamoMarshaler->unmarshalItem($item);
+                        yield $this->storedEventFromDynamoItem($dynamoItem);
+                    }
+
+                    $paginator->next();
+                }
+            }
+        )->remember();
+    }
+
+    private function storedEventFromDynamoItem(array $dynamoItem): StoredEvent
+    {
+        return new StoredEvent([
+            'id' => $dynamoItem['id'],
+            'event_properties' => $dynamoItem['event_properties'],
+            'aggregate_uuid' => $dynamoItem['aggregate_uuid'] ?? '',
+            'aggregate_version' => (string) $dynamoItem['aggregate_version'],
+            'event_version' => $dynamoItem['event_version'],
+            'event_class' => $dynamoItem['event_class'],
+            'meta_data' => new MetaData(
+                Arr::except($dynamoItem['meta_data'], ['stored-event-id', 'created-at']),
+                $dynamoItem['meta_data']['created-at'],
+                $dynamoItem['meta_data']['stored-event-id']
+            ),
+            'created_at' => $dynamoItem['created_at'],
+        ]);
     }
 
     public function persist(Snapshot $snapshot): Snapshot

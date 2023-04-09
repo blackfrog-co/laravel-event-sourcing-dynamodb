@@ -21,8 +21,6 @@ TODOs:
     `StoredEventRepository` methods `retrieveAll()` without an aggregate uuid, and `find()` create a problem for this. 
 - Use more efficient batch get requests for `DynamoDbSnapshotRepository::retrieveById()`.
 - Snapshot retrieval could make one less request in the case that there was no need to break the snapshot up into parts.
-- Use more efficient batch requests for `DynamoDbStoredEventRepository::persistMany()`.
-- Handle possibility of DynamoDb returning unprocessed items in batch put requests.
 - `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()` uses a filter expression which isn't cost-efficient.
 - Handling for manageable DynamoDb errors.
 - A cleaner approach to handling metadata.

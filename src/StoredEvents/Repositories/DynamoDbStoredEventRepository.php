@@ -6,6 +6,7 @@ namespace BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\Repositories;
 
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Marshaler;
+use Aws\DynamoDb\WriteRequestBatch;
 use Aws\ResultPaginator;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
 use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\MetaData;
@@ -273,13 +274,20 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function persistMany(array $events, string $uuid = null): LazyCollection
     {
-        // TODO: A more efficient DynamoDb implementation is possible with batching.
+        $batch = new WriteRequestBatch($this->dynamo, ['table' => $this->table, 'autoflush' => false]);
         $storedEvents = [];
 
         /** @var ShouldBeStored $event */
         foreach ($events as $event) {
-            $storedEvents[] = $this->persist($event, $uuid);
+            $storedEvent = $this->createStoredEvent(
+                event: $event,
+                uuid: $uuid
+            );
+            $storedEvents[] = $storedEvent;
+            $batch->put($this->storedEventToDynamoDbItem($storedEvent));
         }
+
+        $batch->flush();
 
         return new LazyCollection($storedEvents);
     }

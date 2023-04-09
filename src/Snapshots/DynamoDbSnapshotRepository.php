@@ -6,6 +6,7 @@ namespace BlackFrog\LaravelEventSourcingDynamodb\Snapshots;
 
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Marshaler;
+use Aws\DynamoDb\WriteRequestBatch;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
 use Illuminate\Support\Collection;
 use Spatie\EventSourcing\Snapshots\Snapshot;
@@ -102,7 +103,7 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
 
         $partsCount = count($serializedStateParts);
 
-        $dynamoItems = new Collection();
+        $batch = new WriteRequestBatch($this->dynamo, ['table' => $this->table, 'autoflush' => false]);
 
         foreach ($serializedStateParts as $index => $statePart) {
             $snapshotPart = new SnapshotPart(
@@ -113,22 +114,10 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
                 partsCount: $partsCount,
                 data: $statePart
             );
-            $dynamoItems->push($this->dynamoMarshaler->marshalItem($snapshotPart->toArray()));
+            $batch->put($this->dynamoMarshaler->marshalItem($snapshotPart->toArray()));
         }
 
-        $dynamoItems->chunk(25)
-            ->each(function (Collection $dynamoItems): void {
-                $batchRequest = ['RequestItems' => [
-                    $this->table => [],
-                ]];
-
-                $dynamoItems->each(function ($dynamoItem) use (&$batchRequest): void {
-                    $batchRequest['RequestItems'][$this->table][] = ['PutRequest' => ['Item' => $dynamoItem]];
-                });
-
-                $response = $this->dynamo->batchWriteItem($batchRequest);
-                //TODO: handle unprocessed items in response
-            });
+        $batch->flush(untilEmpty: true);
 
         return $snapshot;
     }

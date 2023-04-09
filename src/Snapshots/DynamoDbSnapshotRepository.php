@@ -43,23 +43,27 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
             return null;
         }
 
-        $idItem = $this->dynamoMarshaler->unmarshalItem(
+        $mostRecentSnapshotItem = $this->dynamoMarshaler->unmarshalItem(
             data: $mostRecentSnapshotResult->get('Items')[0]
         );
 
         return $this->retrieveById(
-            id: $idItem['id'],
+            id: $mostRecentSnapshotItem['id'],
             aggregateUuid: $aggregateUuid,
-            aggregateVersion: $idItem['aggregate_version'],
-            partsCount: $idItem['parts_count']
+            aggregateVersion: $mostRecentSnapshotItem['aggregate_version'],
+            partsCount: $mostRecentSnapshotItem['parts_count']
         );
     }
 
     private function retrieveById(int $id, string $aggregateUuid, int $aggregateVersion, int $partsCount): Snapshot
     {
-        $keys = $this->generateKeysForSnapshotParts(id: $id, aggregateUuid: $aggregateUuid, partsCount: $partsCount);
+        $keys = $this->generateKeysForSnapshotParts(
+            id: $id,
+            aggregateUuid: $aggregateUuid,
+            partsCount: $partsCount
+        );
 
-        $snapshotParts = new Collection;
+        $snapshotParts = [];
 
         $first = true;
         $unprocessedKeys = [];
@@ -76,22 +80,16 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
 
             $unprocessedKeys = $result->get('UnprocessedKeys')[$this->table]['Keys'] ?? [];
 
-            $snapshotItems = collect($result->get('Responses')[$this->table]);
-
-            $snapshotItems->each(
-                function (array $item) use (&$snapshotParts): void {
-                    $item = $this->dynamoMarshaler->unmarshalItem($item);
-
-                    $snapshotParts->put(
-                        $item['part'],
-                        $item['data'],
-                    );
-                }
-            );
+            foreach ($result->get('Responses')[$this->table] as $snapshotItem) {
+                $item = $this->dynamoMarshaler->unmarshalItem($snapshotItem);
+                $snapshotParts[$item['part']] = $item['data'];
+            }
         }
 
+        ksort($snapshotParts, SORT_NUMERIC);
+
         $stateData = $this->stateSerializer->combineAndDeserializeState(
-            stateParts: $snapshotParts->sortKeys()->toArray()
+            stateParts: $snapshotParts
         );
 
         return new Snapshot($aggregateUuid, $aggregateVersion, $stateData);

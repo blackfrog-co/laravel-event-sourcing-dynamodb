@@ -16,7 +16,7 @@ readonly class SnapshotPart implements Arrayable
         public int $aggregateVersion,
         public int $part,
         public int $partsCount,
-        public mixed $data,
+        public mixed $snapshotData,
     ) {
         $partForId = str_pad((string) $this->part, 2, '0', STR_PAD_LEFT);
         $this->idPart = "{$this->id}_{$partForId}";
@@ -31,7 +31,7 @@ readonly class SnapshotPart implements Arrayable
             'aggregate_version' => $this->aggregateVersion,
             'part' => $this->part,
             'parts_count' => $this->partsCount,
-            'data' => $this->data,
+            'snapshot_data' => $this->snapshotData,
         ];
     }
 }

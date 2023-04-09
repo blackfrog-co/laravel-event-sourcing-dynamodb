@@ -63,7 +63,7 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
             partsCount: $partsCount
         );
 
-        $snapshotParts = [];
+        $snapshotDataParts = [];
         $unprocessedKeys = [];
         $first = true;
 
@@ -71,8 +71,12 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
 
             $result = $this->dynamo->batchGetItem([
                 'RequestItems' => [
-                    $this->table => ['Keys' => $first ? $keys : $unprocessedKeys],
+                    $this->table => [
+                        'Keys' => $first ? $keys : $unprocessedKeys,
+                        'ProjectionExpression' => 'part, snapshot_data',
+                    ],
                 ],
+
             ]);
 
             $first = false;
@@ -81,17 +85,17 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
 
             foreach ($result->get('Responses')[$this->table] as $snapshotItem) {
                 $item = $this->dynamoMarshaler->unmarshalItem($snapshotItem);
-                $snapshotParts[$item['part']] = $item['data'];
+                $snapshotDataParts[$item['part']] = $item['snapshot_data'];
             }
         }
 
-        ksort($snapshotParts, SORT_NUMERIC);
+        ksort($snapshotDataParts, SORT_NUMERIC);
 
         return new Snapshot(
             aggregateUuid: $aggregateUuid,
             aggregateVersion: $aggregateVersion,
             state: $this->stateSerializer->combineAndDeserializeState(
-                stateParts: $snapshotParts
+                stateParts: $snapshotDataParts
             )
         );
     }
@@ -134,7 +138,7 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
                 aggregateVersion: $snapshot->aggregateVersion,
                 part: $index,
                 partsCount: $partsCount,
-                data: $statePart
+                snapshotData: $statePart
             );
 
             $writeRequestBatch->put(

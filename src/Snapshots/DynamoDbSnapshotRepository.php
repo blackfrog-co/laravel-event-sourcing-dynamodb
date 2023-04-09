@@ -76,26 +76,23 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
 
         $snapshotParts = new Collection;
 
-        $batchGetItemRequest = [
-            'RequestItems' => [
-                $this->table => ['Keys' => $keys->toArray()],
-            ],
-        ];
-
         $first = true;
         $unprocessedKeys = [];
 
         while ($first || ! empty($unprocessedKeys)) {
+
+            $request = [
+                'RequestItems' => [
+                    $this->table => ['Keys' => $first ? $keys->toArray() : $unprocessedKeys],
+                ],
+            ];
+
+            $result = $this->dynamo->batchGetItem($request);
+
             $first = false;
-            if (! empty($unprocessedKeys)) {
-                $batchGetItemRequest = [
-                    'RequestItems' => [
-                        $this->table => ['Keys' => $unprocessedKeys],
-                    ],
-                ];
-            }
-            $result = $this->dynamo->batchGetItem($batchGetItemRequest);
-            $unprocessedKeys = $result->get('UnprocessedKeys')[$this->table] ?? [];
+
+            $unprocessedKeys = $result->get('UnprocessedKeys')[$this->table]['Keys'] ?? [];
+
             $snapshotItems = collect($result->get('Responses')[$this->table]);
 
             $snapshotItems->each(
@@ -115,6 +112,33 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
         );
 
         return new Snapshot($aggregateUuid, $aggregateVersion, $stateData);
+    }
+
+    public function persist(Snapshot $snapshot): Snapshot
+    {
+        $id = $this->idGenerator->generateId();
+
+        $serializedStateParts = $this->stateSerializer->serializeAndSplitState($snapshot->state);
+
+        $partsCount = count($serializedStateParts);
+
+        $batch = new WriteRequestBatch($this->dynamo, ['table' => $this->table, 'autoflush' => false]);
+
+        foreach ($serializedStateParts as $index => $statePart) {
+            $snapshotPart = new SnapshotPart(
+                id: $id,
+                aggregateUuid: $snapshot->aggregateUuid,
+                aggregateVersion: $snapshot->aggregateVersion,
+                part: $index,
+                partsCount: $partsCount,
+                data: $statePart
+            );
+            $batch->put($this->dynamoMarshaler->marshalItem($snapshotPart->toArray()));
+        }
+
+        $batch->flush(untilEmpty: true);
+
+        return $snapshot;
     }
 
     private function retrieveSnapshotParts(string $uuid): LazyCollection
@@ -158,32 +182,5 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
             ),
             'created_at' => $dynamoItem['created_at'],
         ]);
-    }
-
-    public function persist(Snapshot $snapshot): Snapshot
-    {
-        $id = $this->idGenerator->generateId();
-
-        $serializedStateParts = $this->stateSerializer->serializeAndSplitState($snapshot->state);
-
-        $partsCount = count($serializedStateParts);
-
-        $batch = new WriteRequestBatch($this->dynamo, ['table' => $this->table, 'autoflush' => false]);
-
-        foreach ($serializedStateParts as $index => $statePart) {
-            $snapshotPart = new SnapshotPart(
-                id: $id,
-                aggregateUuid: $snapshot->aggregateUuid,
-                aggregateVersion: $snapshot->aggregateVersion,
-                part: $index,
-                partsCount: $partsCount,
-                data: $statePart
-            );
-            $batch->put($this->dynamoMarshaler->marshalItem($snapshotPart->toArray()));
-        }
-
-        $batch->flush(untilEmpty: true);
-
-        return $snapshot;
     }
 }

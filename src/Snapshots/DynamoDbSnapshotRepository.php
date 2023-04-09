@@ -64,9 +64,8 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
         );
 
         $snapshotParts = [];
-
-        $first = true;
         $unprocessedKeys = [];
+        $first = true;
 
         while ($first || ! empty($unprocessedKeys)) {
 
@@ -88,11 +87,13 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
 
         ksort($snapshotParts, SORT_NUMERIC);
 
-        $stateData = $this->stateSerializer->combineAndDeserializeState(
-            stateParts: $snapshotParts
+        return new Snapshot(
+            aggregateUuid: $aggregateUuid,
+            aggregateVersion: $aggregateVersion,
+            state: $this->stateSerializer->combineAndDeserializeState(
+                stateParts: $snapshotParts
+            )
         );
-
-        return new Snapshot($aggregateUuid, $aggregateVersion, $stateData);
     }
 
     private function generateKeysForSnapshotParts(int $id, string $aggregateUuid, int $partsCount): array
@@ -114,13 +115,19 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
     {
         $id = $this->idGenerator->generateId();
 
-        $serializedStateParts = $this->stateSerializer->serializeAndSplitState($snapshot->state);
+        $serializedStateParts = $this->stateSerializer->serializeAndSplitState(
+            state: $snapshot->state
+        );
 
         $partsCount = count($serializedStateParts);
 
-        $batch = new WriteRequestBatch($this->dynamo, ['table' => $this->table, 'autoflush' => false]);
+        $writeRequestBatch = new WriteRequestBatch(
+            client: $this->dynamo,
+            config: ['table' => $this->table, 'autoflush' => false]
+        );
 
         foreach ($serializedStateParts as $index => $statePart) {
+
             $snapshotPart = new SnapshotPart(
                 id: $id,
                 aggregateUuid: $snapshot->aggregateUuid,
@@ -129,10 +136,13 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
                 partsCount: $partsCount,
                 data: $statePart
             );
-            $batch->put($this->dynamoMarshaler->marshalItem($snapshotPart->toArray()));
+
+            $writeRequestBatch->put(
+                item: $this->dynamoMarshaler->marshalItem($snapshotPart->toArray())
+            );
         }
 
-        $batch->flush();
+        $writeRequestBatch->flush();
 
         return $snapshot;
     }

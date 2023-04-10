@@ -24,17 +24,10 @@ return [
             ['AttributeName' => 'aggregate_version', 'AttributeType' => 'N'],
         ],
         'KeySchema' => [
-            ['AttributeName' => 'id', 'KeyType' => 'HASH'],
+            ['AttributeName' => 'aggregate_uuid', 'KeyType' => 'HASH'],
+            ['AttributeName' => 'id', 'KeyType' => 'RANGE'],
         ],
         'GlobalSecondaryIndexes' => [
-            [
-                'IndexName' => 'aggregate_uuid-index',
-                'KeySchema' => [
-                    ['AttributeName' => 'aggregate_uuid', 'KeyType' => 'HASH'],
-                    ['AttributeName' => 'id', 'KeyType' => 'RANGE'],
-                ],
-                'Projection' => ['ProjectionType' => 'ALL'],
-            ],
             [
                 'IndexName' => 'id-sort_id-index',
                 'KeySchema' => [
@@ -42,6 +35,14 @@ return [
                     ['AttributeName' => 'sort_id', 'KeyType' => 'RANGE'],
                 ],
                 'Projection' => ['ProjectionType' => 'ALL'],
+            ],
+            [
+                'IndexName' => 'id-aggregate_uuid-index',
+                'KeySchema' => [
+                    ['AttributeName' => 'id', 'KeyType' => 'HASH'],
+                    ['AttributeName' => 'aggregate_uuid', 'KeyType' => 'RANGE'],
+                ],
+                'Projection' => ['ProjectionType' => 'KEYS_ONLY'],
             ],
             [
                 'IndexName' => 'aggregate_uuid-version-index',

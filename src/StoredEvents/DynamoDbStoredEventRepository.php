@@ -31,19 +31,36 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function find(int $id): StoredEvent
     {
-        $dynamoResult = $this->dynamo->getItem([
+        $result = $this->dynamo->query([
             'TableName' => $this->table,
-            'ConsistentRead' => false, //TODO: Make configurable
-            'Key' => [
-                'id' => [
-                    'N' => $id,
-                ],
+            'IndexName' => 'id-aggregate_uuid-index',
+            'KeyConditionExpression' => 'id = :id',
+            'ExpressionAttributeValues' => [
+                ':id' => ['N' => $id],
             ],
+            'ProjectionExpression' => 'aggregate_uuid',
+            'Limit' => 1,
         ]);
 
-        $dynamoItem = $this->dynamoMarshaler->unmarshalItem($dynamoResult->get('Item'));
+        $idItem = $this->dynamoMarshaler->unmarshalItem(
+            $result->get('Items')[0]
+        );
 
-        return $this->storedEventFactory->storedEventFromDynamoItem($dynamoItem);
+        $result = $this->dynamo->query([
+            'TableName' => $this->table,
+            'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid AND id = :id',
+            'ExpressionAttributeValues' => [
+                ':aggregate_uuid' => ['S' => $idItem['aggregate_uuid']],
+                ':id' => ['N' => $id],
+            ],
+            'Limit' => 1,
+        ]);
+
+        $item = $this->dynamoMarshaler->unmarshalItem(
+            $result->get('Items')[0]
+        );
+
+        return $this->storedEventFactory->storedEventFromDynamoItem($item);
     }
 
     public function retrieveAll(string $uuid = null): LazyCollection
@@ -64,7 +81,6 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
     {
         $resultPaginator = $this->dynamo->getPaginator('Query', [
             'TableName' => $this->table,
-            'IndexName' => 'aggregate_uuid-index',
             'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid',
             'ExpressionAttributeValues' => [':aggregate_uuid' => ['S' => $uuid]],
         ]);
@@ -109,7 +125,6 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
     {
         $resultPaginator = $this->dynamo->getPaginator('Query', [
             'TableName' => $this->table,
-            'IndexName' => 'aggregate_uuid-index',
             'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid AND id >= :id',
             'ExpressionAttributeValues' => [
                 ':aggregate_uuid' => ['S' => $uuid],
@@ -124,7 +139,6 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
     {
         $resultPaginator = $this->dynamo->getPaginator('Query', [
             'TableName' => $this->table,
-            'IndexName' => 'aggregate_uuid-index',
             'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid',
             'ExpressionAttributeValues' => [
                 ':aggregate_uuid' => ['S' => $aggregateUuid],
@@ -165,7 +179,6 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
     {
         $resultPaginator = $this->dynamo->getPaginator('Query', [
             'TableName' => $this->table,
-            'IndexName' => 'aggregate_uuid-index',
             'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid AND id >= :id',
             'ExpressionAttributeValues' => [
                 ':aggregate_uuid' => ['S' => $uuid],

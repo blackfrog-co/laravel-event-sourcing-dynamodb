@@ -18,8 +18,7 @@ readonly class SnapshotPart implements Arrayable
         public int $partsCount,
         public mixed $snapshotData,
     ) {
-        $partForId = static::partForId($part);
-        $this->idPart = "{$this->id}_{$partForId}";
+        $this->idPart = static::generateIdPart($this->id, $this->part);
     }
 
     public function toArray()
@@ -35,8 +34,10 @@ readonly class SnapshotPart implements Arrayable
         ];
     }
 
-    public static function partForId(int $partNumber): string
+    public static function generateIdPart(int $id, int $partNumberZeroFill): string
     {
-        return str_pad((string) $partNumber, 2, '0', STR_PAD_LEFT);
+        $partNumberZeroFill = str_pad((string) $partNumberZeroFill, 2, '0', STR_PAD_LEFT);
+
+        return "{$id}_{$partNumberZeroFill}";
     }
 }

@@ -8,12 +8,8 @@ use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Marshaler;
 use Aws\DynamoDb\WriteRequestBatch;
 use Aws\ResultPaginator;
-use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
-use Carbon\Carbon;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Arr;
 use Illuminate\Support\LazyCollection;
-use Spatie\EventSourcing\EventSerializers\JsonEventSerializer;
 use Spatie\EventSourcing\StoredEvents\Repositories\StoredEventRepository;
 use Spatie\EventSourcing\StoredEvents\ShouldBeStored;
 use Spatie\EventSourcing\StoredEvents\StoredEvent;
@@ -24,9 +20,8 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function __construct(
         private readonly DynamoDbClient $dynamo,
-        private readonly IdGenerator $idGenerator,
         private readonly Marshaler $dynamoMarshaler,
-        private readonly JsonEventSerializer $eventSerializer,
+        private readonly StoredEventFactory $storedEventFactory,
     ) {
         $this->table = (string) config(
             'event-sourcing-dynamodb.stored_event_table',
@@ -48,25 +43,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
         $dynamoItem = $this->dynamoMarshaler->unmarshalItem($dynamoResult->get('Item'));
 
-        return $this->storedEventFromDynamoItem($dynamoItem);
-    }
-
-    private function storedEventFromDynamoItem(array $dynamoItem): StoredEvent
-    {
-        return new StoredEvent([
-            'id' => $dynamoItem['id'],
-            'event_properties' => $dynamoItem['event_properties'],
-            'aggregate_uuid' => $dynamoItem['aggregate_uuid'] ?? '',
-            'aggregate_version' => (string) $dynamoItem['aggregate_version'],
-            'event_version' => $dynamoItem['event_version'],
-            'event_class' => $dynamoItem['event_class'],
-            'meta_data' => new MetaData(
-                Arr::except($dynamoItem['meta_data'], ['stored-event-id', 'created-at']),
-                $dynamoItem['meta_data']['created-at'],
-                $dynamoItem['meta_data']['stored-event-id']
-            ),
-            'created_at' => $dynamoItem['created_at'],
-        ]);
+        return $this->storedEventFactory->storedEventFromDynamoItem($dynamoItem);
     }
 
     public function retrieveAll(string $uuid = null): LazyCollection
@@ -102,7 +79,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
                 while ($result = $paginator->current()) {
                     foreach ($result->get('Items') as $item) {
                         $dynamoItem = $this->dynamoMarshaler->unmarshalItem($item);
-                        yield $this->storedEventFromDynamoItem($dynamoItem);
+                        yield $this->storedEventFactory->storedEventFromDynamoItem($dynamoItem);
                     }
 
                     $paginator->next();
@@ -210,32 +187,11 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
     public function persist(ShouldBeStored $event, string $uuid = null): StoredEvent
     {
         return $this->writeStoredEventToDynamo(
-            $this->createStoredEvent(
+            $this->storedEventFactory->createStoredEvent(
                 event: $event,
                 uuid: $uuid
             )
         );
-    }
-
-    private function createStoredEvent(ShouldBeStored $event, string $uuid = null): StoredEvent
-    {
-        $id = $this->idGenerator->generateId();
-        $createdAt = Carbon::now();
-
-        return new StoredEvent([
-            'id' => $id,
-            'event_properties' => $this->eventSerializer->serialize(clone $event),
-            'aggregate_uuid' => $uuid,
-            'aggregate_version' => $event->aggregateRootVersion() ?? 1,
-            'event_version' => $event->eventVersion(),
-            'event_class' => $this->getEventClass(get_class($event)),
-            'meta_data' => new MetaData(
-                metaData: $event->metaData(),
-                createdAt: $createdAt->toDateTimeString(),
-                id: $id
-            ),
-            'created_at' => $createdAt->getTimestamp(),
-        ]);
     }
 
     private function writeStoredEventToDynamo(StoredEvent $storedEvent): StoredEvent
@@ -278,7 +234,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
 
         /** @var ShouldBeStored $event */
         foreach ($events as $event) {
-            $storedEvent = $this->createStoredEvent(
+            $storedEvent = $this->storedEventFactory->createStoredEvent(
                 event: $event,
                 uuid: $uuid
             );
@@ -321,16 +277,5 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
         $item = $this->dynamoMarshaler->unmarshalItem($item);
 
         return $item['aggregate_version'];
-    }
-
-    private function getEventClass(string $class): string
-    {
-        $map = config('event-sourcing.event_class_map', []);
-
-        if (! empty($map) && in_array($class, $map)) {
-            return array_search($class, $map, true);
-        }
-
-        return $class;
     }
 }

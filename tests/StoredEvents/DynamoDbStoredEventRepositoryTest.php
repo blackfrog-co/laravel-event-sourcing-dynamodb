@@ -1,13 +1,8 @@
 <?php
 
-use Aws\DynamoDb\Marshaler;
-use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
-use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\MicroTimeTimestampProvider;
 use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\DynamoDbStoredEventRepository;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
-use Random\Randomizer;
-use Spatie\EventSourcing\EventSerializers\JsonEventSerializer;
 use Spatie\EventSourcing\StoredEvents\ShouldBeStored;
 use Spatie\EventSourcing\StoredEvents\StoredEvent;
 
@@ -24,12 +19,7 @@ beforeAll(function () {
 beforeEach(function () {
     $this->createTables();
 
-    $this->storedEventRepository = new DynamoDbStoredEventRepository(
-        $this->getDynamoDbClient(),
-        new IdGenerator(new Randomizer(), new MicroTimeTimestampProvider()),
-        new Marshaler(),
-        new JsonEventSerializer(),
-    );
+    $this->storedEventRepository = app(DynamoDbStoredEventRepository::class);
 });
 
 afterEach(function () {

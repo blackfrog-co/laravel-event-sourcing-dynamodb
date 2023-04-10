@@ -10,7 +10,7 @@ use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\MicroTimeTimestampProvider;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\TimestampProvider;
 use BlackFrog\LaravelEventSourcingDynamodb\Snapshots\DynamoDbSnapshotRepository;
-use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\Repositories\DynamoDbStoredEventRepository;
+use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\DynamoDbStoredEventRepository;
 use BlackFrog\LaravelEventSourcingDynamodb\Tables\TableManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace BlackFrog\LaravelEventSourcingDynamodb\Commands;
 
-use BlackFrog\LaravelEventSourcingDynamodb\Tables\Exceptions\TableAlreadyExists;
+use BlackFrog\LaravelEventSourcingDynamodb\Tables\TableAlreadyExistsException;
 use BlackFrog\LaravelEventSourcingDynamodb\Tables\TableManager;
 use Illuminate\Console\Command;
 
@@ -40,7 +40,7 @@ class CreateTables extends Command
             $this->comment('Snapshot table created.');
 
             return self::SUCCESS;
-        } catch (TableAlreadyExists $exception) {
+        } catch (TableAlreadyExistsException $exception) {
             $this->error($exception->getMessage());
 
             return self::FAILURE;

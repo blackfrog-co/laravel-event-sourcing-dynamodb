@@ -3,7 +3,7 @@
 use Aws\DynamoDb\Marshaler;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\MicroTimeTimestampProvider;
-use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\Repositories\DynamoDbStoredEventRepository;
+use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\DynamoDbStoredEventRepository;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 use Random\Randomizer;

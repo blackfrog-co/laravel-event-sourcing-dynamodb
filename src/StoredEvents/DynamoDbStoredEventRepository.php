@@ -2,14 +2,13 @@
 
 declare(strict_types=1);
 
-namespace BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\Repositories;
+namespace BlackFrog\LaravelEventSourcingDynamodb\StoredEvents;
 
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Marshaler;
 use Aws\DynamoDb\WriteRequestBatch;
 use Aws\ResultPaginator;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
-use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\MetaData;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Arr;

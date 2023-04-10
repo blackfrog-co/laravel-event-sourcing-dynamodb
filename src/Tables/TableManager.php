@@ -3,7 +3,6 @@
 namespace BlackFrog\LaravelEventSourcingDynamodb\Tables;
 
 use Aws\DynamoDb\DynamoDbClient;
-use BlackFrog\LaravelEventSourcingDynamodb\Tables\Exceptions\TableAlreadyExists;
 
 class TableManager
 {
@@ -32,7 +31,7 @@ class TableManager
         $tableExists = $this->tableExists($name);
 
         if ($tableExists && $force === false) {
-            throw new TableAlreadyExists("Table '{$name}' already exists.");
+            throw new TableAlreadyExistsException("Table '{$name}' already exists.");
         }
 
         if ($tableExists && $force === true) {

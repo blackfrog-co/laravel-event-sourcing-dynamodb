@@ -1,6 +1,8 @@
 <?php
 
 // config for BlackFrog/LaravelEventSourcingDynamodb
+use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\MicroTimeTimestampProvider;
+
 return [
     'dynamodb-client' => [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
@@ -65,4 +67,6 @@ return [
         ],
         'BillingMode' => 'PAY_PER_REQUEST',
     ],
+
+    'id_timestamp_provider' => MicroTimeTimestampProvider::class,
 ];

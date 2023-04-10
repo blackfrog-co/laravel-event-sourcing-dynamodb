@@ -76,7 +76,6 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
                         'ProjectionExpression' => 'part, snapshot_data',
                     ],
                 ],
-
             ]);
 
             $first = false;

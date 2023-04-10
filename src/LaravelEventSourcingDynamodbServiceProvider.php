@@ -23,11 +23,17 @@ class LaravelEventSourcingDynamodbServiceProvider extends PackageServiceProvider
 
         $this->app->singleton(IdGenerator::class);
 
-        $dynamoDbClient = function () {
+        $this->app->bind(
+            TimestampProvider::class,
+            config(
+                'event-sourcing-dynamodb.id_timestamp_provider',
+                MicroTimeTimestampProvider::class
+            )
+        );
+
+        $dynamoDbClient = function (): DynamoDbClient {
             return new DynamoDbClient(config('event-sourcing-dynamodb.dynamodb-client'));
         };
-
-        $this->app->bind(TimestampProvider::class, MicroTimeTimestampProvider::class);
 
         $this->app->when([
             DynamoDbStoredEventRepository::class,

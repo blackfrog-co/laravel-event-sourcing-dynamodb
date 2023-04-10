@@ -18,7 +18,7 @@ readonly class SnapshotPart implements Arrayable
         public int $partsCount,
         public mixed $snapshotData,
     ) {
-        $partForId = str_pad((string) $this->part, 2, '0', STR_PAD_LEFT);
+        $partForId = static::partForId($part);
         $this->idPart = "{$this->id}_{$partForId}";
     }
 
@@ -33,5 +33,10 @@ readonly class SnapshotPart implements Arrayable
             'parts_count' => $this->partsCount,
             'snapshot_data' => $this->snapshotData,
         ];
+    }
+
+    public static function partForId(int $partNumber): string
+    {
+        return str_pad((string) $partNumber, 2, '0', STR_PAD_LEFT);
     }
 }

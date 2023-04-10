@@ -105,7 +105,7 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
         return (new Collection(range(0, $partsCount - 1)))
             ->transform(
                 function (int $partNumber) use ($id, $aggregateUuid): array {
-                    $partForId = str_pad((string) $partNumber, 2, '0', STR_PAD_LEFT);
+                    $partForId = SnapshotPart::partForId($partNumber);
 
                     return [
                         'aggregate_uuid' => ['S' => $aggregateUuid],

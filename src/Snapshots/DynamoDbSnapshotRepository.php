@@ -63,38 +63,33 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
             partsCount: $partsCount
         );
 
-        $snapshotDataParts = [];
-        $unprocessedKeys = [];
-        $first = true;
+        $snapshotStateParts = [];
 
-        while ($first || ! empty($unprocessedKeys)) {
-
+        while (! empty($keys)) {
             $result = $this->dynamo->batchGetItem([
                 'RequestItems' => [
                     $this->table => [
-                        'Keys' => $first ? $keys : $unprocessedKeys,
+                        'Keys' => $keys,
                         'ProjectionExpression' => 'part, snapshot_data',
                     ],
                 ],
             ]);
 
-            $first = false;
-
-            $unprocessedKeys = $result->get('UnprocessedKeys')[$this->table]['Keys'] ?? [];
-
             foreach ($result->get('Responses')[$this->table] as $snapshotItem) {
                 $item = $this->dynamoMarshaler->unmarshalItem($snapshotItem);
-                $snapshotDataParts[$item['part']] = $item['snapshot_data'];
+                $snapshotStateParts[$item['part']] = $item['snapshot_data'];
             }
+
+            $keys = $result->get('UnprocessedKeys')[$this->table]['Keys'] ?? [];
         }
 
-        ksort($snapshotDataParts, SORT_NUMERIC);
+        ksort($snapshotStateParts, SORT_NUMERIC);
 
         return new Snapshot(
             aggregateUuid: $aggregateUuid,
             aggregateVersion: $aggregateVersion,
             state: $this->stateSerializer->combineAndDeserializeState(
-                stateParts: $snapshotDataParts
+                stateParts: $snapshotStateParts
             )
         );
     }

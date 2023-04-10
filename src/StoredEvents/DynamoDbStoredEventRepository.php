@@ -148,7 +148,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
             'ExpressionAttributeValues' => [
                 ':id' => ['N' => $startingFrom],
             ],
-            'ProjectionExpression' => 'id',
+            'Select' => 'COUNT',
         ]);
 
         $count = 0;
@@ -171,7 +171,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
                 ':aggregate_uuid' => ['S' => $uuid],
                 ':id' => ['N' => $startingFrom],
             ],
-            'ProjectionExpression' => 'id',
+            'Select' => 'COUNT',
         ]);
 
         $count = 0;
@@ -272,9 +272,9 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
             return 0;
         }
 
-        $item = $result->get('Items')[0];
-
-        $item = $this->dynamoMarshaler->unmarshalItem($item);
+        $item = $this->dynamoMarshaler->unmarshalItem(
+            $result->get('Items')[0]
+        );
 
         return $item['aggregate_version'];
     }

@@ -7,8 +7,8 @@ testing on the example Larabank project.
 
 This package provides a DynamoDB implementation for `StoredEventRepository` and `SnapshotRepository`.
 
-The package endeavours to provide no behaviour change when compared to the original Spatie Eloquent implementation.
-This causes a few choices or compromises in dynamo table design that might seem strange otherwise. 
+The package endeavours to have no behaviour change when compared to the original Spatie Eloquent implementation.
+This causes a few choices and compromises in dynamo table design that might seem strange otherwise.
 
 If you're interested in this project please leave a note in the discussions section, and I'll let you know when the first
 versioned release drops.

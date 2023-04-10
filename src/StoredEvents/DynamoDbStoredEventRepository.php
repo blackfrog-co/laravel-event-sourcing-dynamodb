@@ -177,7 +177,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
         $count = 0;
 
         while ($result = $resultPaginator->current()) {
-            $count += $result->get('ScannedCount');
+            $count += $result->get('Count');
             $resultPaginator->next();
         }
 

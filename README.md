@@ -34,7 +34,6 @@ collision prevention, it's not going to be realistic to call the same instance t
 ### Events
 - Events are stored in a table that has several indexes that cover the various possible behaviours of the spatie
  `StoredEventRepository` interface.
-- 
 
 ### Snapshots
 - Snapshots are stored in a single table, but as one or more items to allow snapshots to exceed 400Kb in size.
@@ -50,19 +49,22 @@ collision prevention, it's not going to be realistic to call the same instance t
 ### Dynamo Db
 - Individual Events cannot exceed 400Kb in size (max size of a DynamoDb item). We engineer around this for snapshots.
 - The package expects `PAY_PER_REQUEST` billing mode behaviour and doesn't currently support provisioned throughput. 
-    For example, there's no handling of throughput exceeded exceptions nor a wait/retry mechanism for this.
+For example, there's no handling of throughput exceeded exceptions nor a wait/retry mechanism for this.
+- Due to the use of a Local Secondary Index, the maximum size of all events data per Aggregate UUID is 10GB. If you
+do not intend to use the read consistency feature, and are concerned by the limit, you can remove this limitation by
+moving the index `aggregate_uuid-version-index` to the `GlobalSecondaryIndexes` array when creating tables.
 
 ### Event Ids
 - This package generates its own Int64 ids for events. This is due to the Spatie package interfaces expecting
-    integer ids and the logic expecting them to be incrementing. Dynamo has no mechanism for returning incrementing ints.
+  integer ids and the logic expecting them to be incrementing. Dynamo has no mechanism for returning incrementing ints.
 - These ids consist of the current microsecond timestamp expressed as an integer plus 3 random digits appended to the end.
 - The timestamp component approximates the incrementing id behaviour that's expected for events and the random digits
   increase collision resistance in the unlikely event that two are generated in the same microsecond.
 - Collisions are possible but unlikely. The collision scenario would be two PHP processes generating ids and hitting the
-same microsecond timestamp and then generating the same random 3 digit int to append to them. 
+  same microsecond timestamp and then generating the same random 3 digit int to append to them.
 - This collision scenario is unhandled in the code and the consequences would depend on the design of your application.
-- In the event that the random digits do not clash but the microsecond timestamp is the same, the event ordering 
-is determined by the random digits and thus might be unexpected. This is unlikely to cause an issue depending
+- In the event that the random digits do not clash but the microsecond timestamp is the same, the event ordering
+  is determined by the random digits and thus might be unexpected. This is unlikely to cause an issue depending
 on how the events are used immediately after they are generated.
 
 ## Installation

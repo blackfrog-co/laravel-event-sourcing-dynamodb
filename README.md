@@ -41,25 +41,25 @@ The gorey DynamoDB details.
 
 ### Events
 
-- Events are stored in their own table with `aggregate_uuid` as `HASH` (partition) key and `id` as `SORT` key.
+- Events are stored in their own table with `aggregate_uuid` as `HASH` (partition) key and `id` as `RANGE` key.
 - The events table has two extra indexes to cover the possible behaviours of the `StoredEventRepository` interface.
 - A [Global Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html) (projects all
-  attributes) that has the `id` as both the `HASH` and `SORT` keys supports finding events by their id without their
+  attributes) that has the `id` as both the `HASH` and `RANGE` keys supports finding events by their id without their
   aggregate UUID, and preserves event order when fetching all events.
 - A [Local Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSI.html) (projects keys
-  only) has `aggregate_uuid` as `HASH` and `aggregate_version` as `SORT` to support `getLatestAggregateVersion()`.
+  only) has `aggregate_uuid` as `HASH` and `aggregate_version` as `RANGE` to support `getLatestAggregateVersion()`.
 - Event order is preserved using a generated incrementing integer id based on the current microsecond timestamp.
   See [Event Ids](#event-ids) for details.
 
 ### Snapshots
 
-- Snapshots are stored in a single table, but as one or more items, allowing snapshots to exceed 400KB in size.
+- Snapshots are stored in a single table, but as one or more items, allowing snapshots to exceed the DynamoDb 400KB
+  limit in size. The table has the `aggregate_uuid` as the `HASH` key and `id_part` as the `RANGE` key.
 - PHP `serialize()` is used on the output of you aggregate root's `getState()` method and the results are then base64
   encoded and split into multiple parts if too large to fit inside a single DynamoDB item (400KB limit).
 - When a snapshot is retrieved the parts are recombined behind the scenes to rehydrate your aggregate root.
 - The total size of snapshots is not limited by DynamoDb and only constrained by the PHP memory limit of the process
   working with them.
-- Each snapshot has an integer Id generated in the same as
 
 ### Read Consistency
 

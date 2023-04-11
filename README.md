@@ -19,7 +19,6 @@ TODOs:
 
 - `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()` uses a filter expression which isn't efficient.
 - Handling for manageable DynamoDb errors.
-- Add configurable read consistency option.
 - A cleaner approach to handling metadata.
 - Ensure package config is correct and install journey is easy and clear.
 - Provide an interface to allow users to replace IdGenerator with their own.

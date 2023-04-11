@@ -42,7 +42,7 @@ The gorey DynamoDB details.
 
 ### Events
 
-- Events are stored in their own table with `aggregate_uuid` as `HASH` (partition) key and `id` as `RANGE` key.
+- Events are stored in a table with `aggregate_uuid` as `HASH` (partition) key and `id` as `RANGE` key.
 - The events table has two indexes to cover the behaviours of the `StoredEventRepository` interface.
 - A [Global Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html) (projects all
   attributes) that has the `id` as both the `HASH` and `RANGE` keys supports finding events by their id without their
@@ -50,7 +50,7 @@ The gorey DynamoDB details.
 - A [Local Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSI.html) (projects keys
   only) has `aggregate_uuid` as `HASH` and `aggregate_version` as `RANGE` to support `getLatestAggregateVersion()`.
 - Event order is preserved using a generated incrementing integer id based on the current microsecond timestamp.
-  This is necessary for compatibility with the package, see [Event Ids](#event-ids) for details.
+  This is necessary for compatibility with the Spatie package, see [Event Ids](#event-ids) for details.
 
 ### Snapshots
 

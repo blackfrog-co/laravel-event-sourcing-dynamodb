@@ -31,7 +31,7 @@ class StateSerializer
         return base64_encode(serialize($state));
     }
 
-    private function deserializeState(string $state): mixed
+    public function deserializeState(string $state): mixed
     {
         return unserialize(base64_decode($state));
     }

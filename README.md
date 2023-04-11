@@ -17,7 +17,6 @@ Requires 64bit PHP 8.2 due to the way it generates unique ids.
 
 TODOs:
 
-- Snapshot retrieval could make one less request in the case that there was no need to break the snapshot up into parts.
 - `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()` uses a filter expression which isn't efficient.
 - Handling for manageable DynamoDb errors.
 - Add configurable read consistency option.

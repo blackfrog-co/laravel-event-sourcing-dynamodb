@@ -36,7 +36,6 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
             'ExpressionAttributeValues' => [':aggregate_uuid' => ['S' => $aggregateUuid]],
             'ScanIndexForward' => false,
             'Limit' => 1,
-            'ProjectionExpression' => 'id, parts_count, aggregate_version',
         ]);
 
         if ($mostRecentSnapshotResult->get('Count') === 0) {
@@ -47,7 +46,17 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
             data: $mostRecentSnapshotResult->get('Items')[0]
         );
 
-        return $this->retrieveById(
+        if ($mostRecentSnapshotItem['parts_count'] === 1) {
+            return new Snapshot(
+                aggregateUuid: $aggregateUuid,
+                aggregateVersion: $mostRecentSnapshotItem['aggregate_version'],
+                state: $this->stateSerializer->deserializeState(
+                    $mostRecentSnapshotItem['snapshot_data']
+                )
+            );
+        }
+
+        return $this->retrieveSnapshotParts(
             id: $mostRecentSnapshotItem['id'],
             aggregateUuid: $aggregateUuid,
             aggregateVersion: $mostRecentSnapshotItem['aggregate_version'],
@@ -55,8 +64,12 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
         );
     }
 
-    private function retrieveById(int $id, string $aggregateUuid, int $aggregateVersion, int $partsCount): Snapshot
-    {
+    private function retrieveSnapshotParts(
+        int $id,
+        string $aggregateUuid,
+        int $aggregateVersion,
+        int $partsCount
+    ): Snapshot {
         $keys = $this->generateKeysForSnapshotParts(
             id: $id,
             aggregateUuid: $aggregateUuid,

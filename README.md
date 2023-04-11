@@ -32,9 +32,9 @@ TODOs for Release:
 
 - Provides a DynamoDB implementation for `StoredEventRepository` and `SnapshotRepository`.
 - Complete compatibility with the Spatie Eloquent implementations.
-- Support for [strongly consistent reads](#read-consistency) (with caveats).
 - Unlimited [snapshot](#snapshots) size.
 - CreateTables command to get you started quickly.
+- Optional support for [strongly consistent reads](#read-consistency) (with caveats).
 
 ## How It Works
 
@@ -143,15 +143,17 @@ table specs and move them into your preferred mechanism for managing AWS resourc
 
 ### Update Spatie Laravel Event Sourcing Config
 
-- Update the config for the Spatie Event sourcing package in `config/event-sourcing.php` setting the value
-  for `stored_event_repository` to `DynamoDbStoredEventRepository::class` and `snapshot_repository`
-  to `DynamoDbSnapshotRepository::class`.
+Update the config for the Spatie Laravel Event Sourcing package in `config/event-sourcing.php` setting the value
+for `stored_event_repository` to `DynamoDbStoredEventRepository::class` and `snapshot_repository`
+to `DynamoDbSnapshotRepository::class`.
 
 ## Testing
 
 Running the test suite requires DynamoDBLocal, see [Local Development](#local-development) for setup.
 
 The test suite expects this to be present and running at default ports.
+
+**Run:**
 
 ```bash
 composer test

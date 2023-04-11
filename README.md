@@ -15,7 +15,7 @@ versioned release drops.
 
 Requires 64bit PHP 8.2 due to the way it generates unique ids.
 
-TODOs:
+TODOs for Release:
 
 - `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()` uses a filter expression which isn't efficient.
 - Handling for manageable DynamoDb errors.
@@ -23,7 +23,7 @@ TODOs:
 - Ensure package config is correct and install journey is easy and clear.
 - Provide an interface to allow users to replace IdGenerator with their own.
 - Copy and modify any parts of the main package test suite that can give more end to end coverage.
-- Write some basic docs.
+- Write some basic docs. (WIP)
 - IdGenerator is a bit over-engineered, simplify it e.g. there's probably no need for it be a singleton with its own 
 collision prevention, it's not going to be realistic to call the same instance twice in one microsecond.
 

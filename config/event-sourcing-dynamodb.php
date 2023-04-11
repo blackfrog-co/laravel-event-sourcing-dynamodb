@@ -48,14 +48,6 @@ return [
                 ],
                 'Projection' => ['ProjectionType' => 'ALL'],
             ],
-            [
-                'IndexName' => 'id-aggregate_uuid-index',
-                'KeySchema' => [
-                    ['AttributeName' => 'id', 'KeyType' => 'HASH'],
-                    ['AttributeName' => 'aggregate_uuid', 'KeyType' => 'RANGE'],
-                ],
-                'Projection' => ['ProjectionType' => 'KEYS_ONLY'],
-            ],
         ],
         'BillingMode' => 'PAY_PER_REQUEST',
     ],

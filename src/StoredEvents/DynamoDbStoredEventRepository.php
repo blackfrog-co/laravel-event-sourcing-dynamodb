@@ -33,24 +33,9 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
     {
         $result = $this->dynamo->query([
             'TableName' => $this->table,
-            'IndexName' => 'id-aggregate_uuid-index',
+            'IndexName' => 'id-sort_id-index',
             'KeyConditionExpression' => 'id = :id',
             'ExpressionAttributeValues' => [
-                ':id' => ['N' => $id],
-            ],
-            'ProjectionExpression' => 'aggregate_uuid',
-            'Limit' => 1,
-        ]);
-
-        $idItem = $this->dynamoMarshaler->unmarshalItem(
-            $result->get('Items')[0]
-        );
-
-        $result = $this->dynamo->query([
-            'TableName' => $this->table,
-            'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid AND id = :id',
-            'ExpressionAttributeValues' => [
-                ':aggregate_uuid' => ['S' => $idItem['aggregate_uuid']],
                 ':id' => ['N' => $id],
             ],
             'Limit' => 1,

@@ -51,11 +51,6 @@ collision prevention, it's not going to be realistic to call the same instance t
 - Individual Events cannot exceed 400Kb in size (max size of a DynamoDb item). We engineer around this for snapshots.
 - The package expects `PAY_PER_REQUEST` billing mode behaviour and doesn't currently support provisioned throughput. 
     For example, there's no handling of throughput exceeded exceptions nor a wait/retry mechanism for this.
-- The package currently creates 3 Global Secondary Indexes, two with projection type `ALL` and one `KEYS ONLY`. This
-  has a cost implication for writes and storage and should be factored in when estimating your Dynamo spend. If you 
-  do not have a use case for calling `StoredEventRepository::retrieveAll($uuid = null)` without specifying an aggregate 
-  UUID, you can remove the `id-sort_id-index` from the table specification in config and save money. The spatie package 
-  internally does not (currently) use the method in that way either.
 
 ### Event Ids
 - This package generates its own Int64 ids for events. This is due to the Spatie package interfaces expecting

@@ -12,19 +12,25 @@ use Illuminate\Support\Collection;
 use Spatie\EventSourcing\Snapshots\Snapshot;
 use Spatie\EventSourcing\Snapshots\SnapshotRepository;
 
-class DynamoDbSnapshotRepository implements SnapshotRepository
+readonly class DynamoDbSnapshotRepository implements SnapshotRepository
 {
     protected string $table;
 
+    protected bool $readConsistency;
+
     public function __construct(
-        private readonly DynamoDbClient $dynamo,
-        private readonly IdGenerator $idGenerator,
-        private readonly Marshaler $dynamoMarshaler,
-        private readonly StateSerializer $stateSerializer
+        private DynamoDbClient $dynamo,
+        private IdGenerator $idGenerator,
+        private Marshaler $dynamoMarshaler,
+        private StateSerializer $stateSerializer
     ) {
         $this->table = config(
             'event-sourcing-dynamodb.snapshot_table',
             'snapshots'
+        );
+        $this->readConsistency = (bool) config(
+            'event-sourcing-dynamodb.read_consistency',
+            false
         );
     }
 
@@ -36,6 +42,7 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
             'ExpressionAttributeValues' => [':aggregate_uuid' => ['S' => $aggregateUuid]],
             'ScanIndexForward' => false,
             'Limit' => 1,
+            'ConsistentRead' => $this->readConsistency,
         ]);
 
         if ($mostRecentSnapshotResult->get('Count') === 0) {
@@ -84,6 +91,7 @@ class DynamoDbSnapshotRepository implements SnapshotRepository
                     $this->table => [
                         'Keys' => $keys,
                         'ProjectionExpression' => 'part, snapshot_data',
+                        'ConsistentRead' => $this->readConsistency,
                     ],
                 ],
             ]);

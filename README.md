@@ -54,18 +54,23 @@ For example, there's no handling of throughput exceeded exceptions nor a wait/re
 do not intend to use the read consistency feature, and are concerned by the limit, you can remove this limitation by
 moving the index `aggregate_uuid-version-index` to the `GlobalSecondaryIndexes` array when creating tables.
 
+### Transactions
+- The spatie package has a method on its `AggregateRoot` base class called `persistInTransaction()`, this creates a
+Laravel DB transaction around the storage of events. There's currently no way for the Repository to know about this
+transaction, so we aren't able to implement it for DynamoDb. This is not used by the package internally, so you only
+need to be aware if you use this method yourself.
+
 ### Event Ids
 - This package generates its own Int64 ids for events. This is due to the Spatie package interfaces expecting
   integer ids and the logic expecting them to be incrementing. Dynamo has no mechanism for returning incrementing ints.
-- These ids consist of the current microsecond timestamp expressed as an integer plus 3 random digits appended to the end.
+- The ids consist of the current microsecond timestamp expressed as an integer plus 3 random digits appended to the end.
 - The timestamp component approximates the incrementing id behaviour that's expected for events and the random digits
   increase collision resistance in the unlikely event that two are generated in the same microsecond.
 - Collisions are possible but unlikely. The collision scenario would be two PHP processes generating ids and hitting the
   same microsecond timestamp and then generating the same random 3 digit int to append to them.
 - This collision scenario is unhandled in the code and the consequences would depend on the design of your application.
 - In the event that the random digits do not clash but the microsecond timestamp is the same, the event ordering
-  is determined by the random digits and thus might be unexpected. This is unlikely to cause an issue depending
-on how the events are used immediately after they are generated.
+  is determined by the random digits.
 
 ## Installation
 

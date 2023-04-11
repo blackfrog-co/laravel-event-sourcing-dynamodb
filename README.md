@@ -5,8 +5,6 @@ A DynamoDB driver for `spatie/laravel-event-sourcing` allowing for a serverless 
 ! Work In Progress ! Not yet suitable for use. The package is functionally complete but has only had light real world
 testing on the example Larabank project.
 
-This package provides a DynamoDB implementation for `StoredEventRepository` and `SnapshotRepository`.
-
 The package endeavours to have no behaviour change when compared to the original Spatie Eloquent implementation.
 This causes a few choices and compromises in dynamo table design that might seem strange otherwise.
 
@@ -27,9 +25,11 @@ TODOs for Release:
 - Write some basic docs. (WIP)
 - IdGenerator is a bit over-engineered, simplify it e.g. there's probably no need for it be a singleton with its own
   collision prevention, it's not going to be realistic to call the same instance twice in one microsecond.
+- Persist() with null uuid?
 
 ## Features
 
+- Provides a DynamoDB implementation for `StoredEventRepository` and `SnapshotRepository`.
 - Complete compatibility with the Spatie Eloquent implementations.
 - Support for [strongly consistent reads](#read-consistency) (with caveats).
 - Unlimited [snapshot](#snapshots) size.
@@ -37,19 +37,29 @@ TODOs for Release:
 
 ## How It Works
 
+The gorey DynamoDB details.
+
 ### Events
 
-- Events are stored in a table that has several indexes that cover the various possible behaviours of the spatie
-  `StoredEventRepository` interface.
+- Events are stored in their own table with `aggregate_uuid` as `HASH` (partition) key and `id` as `SORT` key.
+- The events table has two extra indexes to cover the possible behaviours of the `StoredEventRepository` interface.
+- A [Global Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html) (projects all
+  attributes) that has the `id` as both the `HASH` and `SORT` keys supports finding events by their id without their
+  aggregate UUID, and preserves event order when fetching all events.
+- A [Local Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSI.html) (projects keys
+  only) has `aggregate_uuid` as `HASH` and `aggregate_version` as `SORT` to support `getLatestAggregateVersion()`.
+- Event order is preserved using a generated incrementing integer id based on the current microsecond timestamp.
+  See [Event Ids](#event-ids) for details.
 
 ### Snapshots
 
-- Snapshots are stored in a single table, but as one or more items, allowing snapshots to exceed 400Kb in size.
+- Snapshots are stored in a single table, but as one or more items, allowing snapshots to exceed 400KB in size.
 - PHP `serialize()` is used on the output of you aggregate root's `getState()` method and the results are then base64
   encoded and split into multiple parts if too large to fit inside a single DynamoDB item (400KB limit).
 - When a snapshot is retrieved the parts are recombined behind the scenes to rehydrate your aggregate root.
 - The total size of snapshots is not limited by DynamoDb and only constrained by the PHP memory limit of the process
   working with them.
+- Each snapshot has an integer Id generated in the same as
 
 ### Read Consistency
 
@@ -64,11 +74,11 @@ TODOs for Release:
 
 ### Dynamo Db
 
-- Individual Events cannot exceed 400Kb in size (max size of a DynamoDb item). We engineer around this for snapshots.
-- The maximum size of all events data per Aggregate UUID is 10GB due to the use of a [Local Secondary
-  Index(https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSI.html), If you
-  do not intend to use the read consistency feature, and are concerned by the limit, you can remove this limitation by
-  moving the index `aggregate_uuid-version-index` to the `GlobalSecondaryIndexes` **before** creating tables.
+- Individual Events cannot exceed 400KB in size, which is max size of a DynamoDb item.
+- The maximum size of all events data per Aggregate UUID is 10GB due to the use of
+  a [Local Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSI.html), If you do not
+  intend to use the read consistency feature, you can remove this limitation by moving the
+  index `aggregate_uuid-version-index` to the `GlobalSecondaryIndexes` **before** creating tables.
 - The package expects `PAY_PER_REQUEST` billing mode behaviour and doesn't currently support provisioned throughput.
   For example, there's no handling of throughput exceeded exceptions nor a wait/retry mechanism for this.
 
@@ -111,10 +121,12 @@ php artisan vendor:publish --tag="laravel-event-sourcing-dynamodb-config"
 ```
 
 Review the config key `dynamodb-client` and make sure the appropriate ENV variables are set, or you may wish to use
-your own ENV variable names if the package defaults clash for you. This array is just the configuration array passed to
+your own ENV variable names if the package defaults clash for you. This array is the configuration array passed to
 `Aws\DynamoDb\DynamoDbClient` so you can modify it to use anything the AWS package supports, including alternative
 authentication options. If you already use AWS, for example with DynamoDb as a Cache driver for Laravel, you should
 check and align your configuration for this with the one for this package to avoid confusion or duplication.
+
+You can change the default table names using the `event-table` and `snapshot-table` config keys.
 
 ### Create DynamoDb Tables
 
@@ -123,9 +135,17 @@ appropriate AWS permissions to do so and is probably unwise to use in a producti
 your own risk) the table specifications in `event-sourcing-dynamodb.php`. For production, we recommend you take these
 table specs and move them into your preferred mechanism for managing AWS resources, such as Terraform or CloudFormation.
 
+### Update Spatie Laravel Event Sourcing Config
+
+- Update the config for the Spatie Event sourcing package in `config/event-sourcing.php` setting the value
+  for `stored_event_repository` to `DynamoDbStoredEventRepository::class` and `snapshot_repository`
+  to `DynamoDbSnapshotRepository::class`.
+
 ## Testing
 
 Running the test suite requires DynamoDBLocal, see [Local Development](#local-development) for setup.
+
+The test suite expects this to be present and running at default ports.
 
 ```bash
 composer test
@@ -135,10 +155,7 @@ composer test
 
 For local development you can use:
 [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html)
-
-The test suite expects this to be present and running at default ports if you wish to run the tests locally yourself.
-
-There are some minor differences in behaviour from the real service, and we recommend testing against a real DynamoDb in
+There are some minor differences in behaviour from the real service, and we recommend testing against real DynamoDb in
 your AWS account before launching your project.
 
 ## Changelog

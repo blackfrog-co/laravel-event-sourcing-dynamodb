@@ -26,6 +26,7 @@ TODOs for Release:
 - IdGenerator is a bit over-engineered, simplify it e.g. there's probably no need for it be a singleton with its own
   collision prevention, it's not going to be realistic to call the same instance twice in one microsecond.
 - Persist() with null uuid?
+- See if we can solve for LazyCollection->remember().
 
 ## Features
 
@@ -42,14 +43,14 @@ The gorey DynamoDB details.
 ### Events
 
 - Events are stored in their own table with `aggregate_uuid` as `HASH` (partition) key and `id` as `RANGE` key.
-- The events table has two extra indexes to cover the possible behaviours of the `StoredEventRepository` interface.
+- The events table has two indexes to cover the behaviours of the `StoredEventRepository` interface.
 - A [Global Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html) (projects all
   attributes) that has the `id` as both the `HASH` and `RANGE` keys supports finding events by their id without their
   aggregate UUID, and preserves event order when fetching all events.
 - A [Local Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSI.html) (projects keys
   only) has `aggregate_uuid` as `HASH` and `aggregate_version` as `RANGE` to support `getLatestAggregateVersion()`.
 - Event order is preserved using a generated incrementing integer id based on the current microsecond timestamp.
-  See [Event Ids](#event-ids) for details.
+  This is necessary for compatibility with the package, see [Event Ids](#event-ids) for details.
 
 ### Snapshots
 
@@ -101,6 +102,11 @@ The gorey DynamoDB details.
 - This collision scenario is unhandled in the code and the consequences would depend on the design of your application.
 - In the event that the random digits do not clash but the microsecond timestamp is the same, the event ordering
   is determined by the random digits.
+
+### LazyCollections
+
+- The package currently calls the `remember()` method on LazyCollections before it returns them. This limits the
+  complexity of the pagination required but means that if you traverse the entire collection it will remain in memory.
 
 ## Getting Started
 

@@ -28,6 +28,11 @@ TODOs:
 - IdGenerator is a bit over-engineered, simplify it e.g. there's probably no need for it be a singleton with its own 
 collision prevention, it's not going to be realistic to call the same instance twice in one microsecond.
 
+## Features
+- Complete compatibility with Spatie Eloquent behaviour.
+- Support for strongly consistent reads (with caveats).
+- Unlimited snapshot size.
+- CreateTables command to get you started quickly.
 
 ## How It Works
 
@@ -43,6 +48,12 @@ collision prevention, it's not going to be realistic to call the same instance t
 - The total size of snapshots is not limited by DynamoDb and only constrained by the PHP memory limit of the process
   working with them.
 - All of this behaviour is hidden behind the `SnapshotRepository` interface and should 'just work'.
+
+### Read Consistency
+- You can configure [consistent reads from DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html)
+using the `read_consistency` config key (defaults to `false`.) This only applies to methods where you pass an
+aggregate root UUID as an argument. Some method calls on the EventRepository such as `find($id)` and `retrieveAll(null)`
+remain eventually consistent.
 
 ## Limitations
 

@@ -14,18 +14,24 @@ use Spatie\EventSourcing\StoredEvents\Repositories\StoredEventRepository;
 use Spatie\EventSourcing\StoredEvents\ShouldBeStored;
 use Spatie\EventSourcing\StoredEvents\StoredEvent;
 
-class DynamoDbStoredEventRepository implements StoredEventRepository
+readonly class DynamoDbStoredEventRepository implements StoredEventRepository
 {
     protected string $table;
 
+    protected bool $readConsistency;
+
     public function __construct(
-        private readonly DynamoDbClient $dynamo,
-        private readonly Marshaler $dynamoMarshaler,
-        private readonly StoredEventFactory $storedEventFactory,
+        private DynamoDbClient $dynamo,
+        private Marshaler $dynamoMarshaler,
+        private StoredEventFactory $storedEventFactory,
     ) {
         $this->table = (string) config(
             'event-sourcing-dynamodb.stored_event_table',
             'stored_events'
+        );
+        $this->readConsistency = (bool) config(
+            'event-sourcing-dynamodb.read_consistency',
+            false
         );
     }
 
@@ -68,6 +74,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
             'TableName' => $this->table,
             'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid',
             'ExpressionAttributeValues' => [':aggregate_uuid' => ['S' => $uuid]],
+            'ConsistentRead' => $this->readConsistency,
         ]);
 
         return $this->lazyCollectionFromPaginator($resultPaginator);
@@ -101,6 +108,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
             'ExpressionAttributeValues' => [
                 ':id' => ['N' => $startingFrom],
             ],
+            'ConsistentRead' => $this->readConsistency,
         ]);
 
         return $this->lazyCollectionFromPaginator($resultPaginator);
@@ -115,6 +123,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
                 ':aggregate_uuid' => ['S' => $uuid],
                 ':id' => ['N' => $startingFrom],
             ],
+            'ConsistentRead' => $this->readConsistency,
         ]);
 
         return $this->lazyCollectionFromPaginator($resultPaginator);
@@ -130,6 +139,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
                 ':aggregate_version' => ['N' => $aggregateVersion],
             ],
             'FilterExpression' => 'aggregate_version > :aggregate_version',
+            'ConsistentRead' => $this->readConsistency,
         ]);
 
         return $this->lazyCollectionFromPaginator($resultPaginator);
@@ -170,6 +180,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
                 ':id' => ['N' => $startingFrom],
             ],
             'Select' => 'COUNT',
+            'ConsistentRead' => $this->readConsistency,
         ]);
 
         $count = 0;
@@ -264,6 +275,7 @@ class DynamoDbStoredEventRepository implements StoredEventRepository
             'ProjectionExpression' => 'aggregate_version',
             'ScanIndexForward' => false,
             'Limit' => 1,
+            'ConsistentRead' => $this->readConsistency,
         ]);
 
         if ($result->get('Count') === 0) {

@@ -16,6 +16,8 @@ return [
         ],
     ],
 
+    'read_consistency' => false,
+
     'stored-event-table' => 'stored_events',
 
     'stored-event-table-definition' => [
@@ -53,6 +55,7 @@ return [
     ],
 
     'snapshot-table' => 'snapshots',
+
     'snapshot-table-definition' => [
         'AttributeDefinitions' => [
             ['AttributeName' => 'aggregate_uuid', 'AttributeType' => 'S'],

@@ -17,11 +17,10 @@ Requires 64bit PHP 8.2 due to the way it generates unique ids.
 
 TODOs:
 
-- Reduce the number of Global Secondary Indexes (currently 3, one KEYS_ONLY) for stored events, if possible. Currently,
-    `StoredEventRepository` methods `retrieveAll()` without an aggregate uuid, and `find()` create a problem for this.
 - Snapshot retrieval could make one less request in the case that there was no need to break the snapshot up into parts.
-- `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()` uses a filter expression which isn't cost-efficient.
+- `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()` uses a filter expression which isn't efficient.
 - Handling for manageable DynamoDb errors.
+- Add configurable read consistency option.
 - A cleaner approach to handling metadata.
 - Ensure package config is correct and install journey is easy and clear.
 - Provide an interface to allow users to replace IdGenerator with their own.
@@ -36,7 +35,6 @@ collision prevention, it's not going to be realistic to call the same instance t
 ### Events
 - Events are stored in a table that has several indexes that cover the various possible behaviours of the spatie
  `StoredEventRepository` interface.
-- 
 
 ### Snapshots
 - Snapshots are stored in a single table, but as one or more items to allow snapshots to exceed 400Kb in size.
@@ -52,25 +50,28 @@ collision prevention, it's not going to be realistic to call the same instance t
 ### Dynamo Db
 - Individual Events cannot exceed 400Kb in size (max size of a DynamoDb item). We engineer around this for snapshots.
 - The package expects `PAY_PER_REQUEST` billing mode behaviour and doesn't currently support provisioned throughput. 
-    For example, there's no handling of throughput exceeded exceptions nor a wait/retry mechanism for this.
-- The package currently creates 3 Global Secondary Indexes, two with projection type `ALL` and one `KEYS ONLY`. This
-  has a cost implication for writes and storage and should be factored in when estimating your Dynamo spend. If you 
-  do not have a use case for calling `StoredEventRepository::retrieveAll($uuid = null)` without specifying an aggregate 
-  UUID, you can remove the `id-sort_id-index` from the table specification in config and save money. The spatie package 
-  internally does not (currently) use the method in that way either.
+For example, there's no handling of throughput exceeded exceptions nor a wait/retry mechanism for this.
+- Due to the use of a Local Secondary Index, the maximum size of all events data per Aggregate UUID is 10GB. If you
+do not intend to use the read consistency feature, and are concerned by the limit, you can remove this limitation by
+moving the index `aggregate_uuid-version-index` to the `GlobalSecondaryIndexes` array when creating tables.
+
+### Transactions
+- The spatie package has a method on its `AggregateRoot` base class called `persistInTransaction()`, this creates a
+Laravel DB transaction around the storage of events. There's currently no way for the Repository to know about this
+transaction, so we aren't able to implement it for DynamoDb. This is not used by the package internally, so you only
+need to be aware if you use this method yourself.
 
 ### Event Ids
 - This package generates its own Int64 ids for events. This is due to the Spatie package interfaces expecting
-    integer ids and the logic expecting them to be incrementing. Dynamo has no mechanism for returning incrementing ints.
-- These ids consist of the current microsecond timestamp expressed as an integer plus 3 random digits appended to the end.
+  integer ids and the logic expecting them to be incrementing. Dynamo has no mechanism for returning incrementing ints.
+- The ids consist of the current microsecond timestamp expressed as an integer plus 3 random digits appended to the end.
 - The timestamp component approximates the incrementing id behaviour that's expected for events and the random digits
   increase collision resistance in the unlikely event that two are generated in the same microsecond.
 - Collisions are possible but unlikely. The collision scenario would be two PHP processes generating ids and hitting the
-same microsecond timestamp and then generating the same random 3 digit int to append to them. 
+  same microsecond timestamp and then generating the same random 3 digit int to append to them.
 - This collision scenario is unhandled in the code and the consequences would depend on the design of your application.
-- In the event that the random digits do not clash but the microsecond timestamp is the same, the event ordering 
-is determined by the random digits and thus might be unexpected. This is unlikely to cause an issue depending
-on how the events are used immediately after they are generated.
+- In the event that the random digits do not clash but the microsecond timestamp is the same, the event ordering
+  is determined by the random digits.
 
 ## Installation
 

@@ -26,25 +26,10 @@ return [
             ['AttributeName' => 'aggregate_version', 'AttributeType' => 'N'],
         ],
         'KeySchema' => [
-            ['AttributeName' => 'id', 'KeyType' => 'HASH'],
+            ['AttributeName' => 'aggregate_uuid', 'KeyType' => 'HASH'],
+            ['AttributeName' => 'id', 'KeyType' => 'RANGE'],
         ],
-        'GlobalSecondaryIndexes' => [
-            [
-                'IndexName' => 'aggregate_uuid-index',
-                'KeySchema' => [
-                    ['AttributeName' => 'aggregate_uuid', 'KeyType' => 'HASH'],
-                    ['AttributeName' => 'id', 'KeyType' => 'RANGE'],
-                ],
-                'Projection' => ['ProjectionType' => 'ALL'],
-            ],
-            [
-                'IndexName' => 'id-sort_id-index',
-                'KeySchema' => [
-                    ['AttributeName' => 'id', 'KeyType' => 'HASH'],
-                    ['AttributeName' => 'sort_id', 'KeyType' => 'RANGE'],
-                ],
-                'Projection' => ['ProjectionType' => 'ALL'],
-            ],
+        'LocalSecondaryIndexes' => [
             [
                 'IndexName' => 'aggregate_uuid-version-index',
                 'KeySchema' => [
@@ -52,6 +37,16 @@ return [
                     ['AttributeName' => 'aggregate_version', 'KeyType' => 'RANGE'],
                 ],
                 'Projection' => ['ProjectionType' => 'KEYS_ONLY'],
+            ],
+        ],
+        'GlobalSecondaryIndexes' => [
+            [
+                'IndexName' => 'id-sort_id-index',
+                'KeySchema' => [
+                    ['AttributeName' => 'id', 'KeyType' => 'HASH'],
+                    ['AttributeName' => 'sort_id', 'KeyType' => 'RANGE'],
+                ],
+                'Projection' => ['ProjectionType' => 'ALL'],
             ],
         ],
         'BillingMode' => 'PAY_PER_REQUEST',

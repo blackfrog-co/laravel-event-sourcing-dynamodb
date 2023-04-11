@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // config for BlackFrog/LaravelEventSourcingDynamodb
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\MicroTimeTimestampProvider;
 

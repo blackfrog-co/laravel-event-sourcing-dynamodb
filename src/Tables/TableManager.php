@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BlackFrog\LaravelEventSourcingDynamodb\Tables;
 
 use Aws\DynamoDb\DynamoDbClient;
 
-class TableManager
+readonly class TableManager
 {
-    public function __construct(private readonly DynamoDbClient $dynamoDbClient)
+    public function __construct(private DynamoDbClient $dynamoDbClient)
     {
     }
 

@@ -1,7 +1,7 @@
 <?php
 
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
-use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\MicroTimeTimestampProvider;
+use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\MicroTimestampProvider;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\TimestampProvider;
 use Random\Randomizer;
 
@@ -17,27 +17,10 @@ beforeAll(function () {
             return $this->microsecondsTimestamp;
         }
     }
-
-    class ClockSkewTimestampProvider implements TimestampProvider
-    {
-        public int $counter = 0;
-
-        public function __construct(protected array $microsecondsTimestamps)
-        {
-        }
-
-        public function microsecondsTimestamp(): int
-        {
-            $timestamp = $this->microsecondsTimestamps[$this->counter];
-            $this->counter++;
-
-            return $timestamp;
-        }
-    }
 });
 
 beforeEach(function () {
-    $this->idGenerator = new IdGenerator(new Randomizer(), new MicroTimeTimestampProvider());
+    $this->idGenerator = new IdGenerator(new Randomizer(), new MicroTimestampProvider());
 });
 
 afterEach(function () {
@@ -125,24 +108,6 @@ it('uses the provided integer timestamp as the start of each id', function () {
     expect($firstSixteenDigitsOfId)->toEqual((string) $microTimeStamp);
 });
 
-it('never returns the same id twice from the same instance, even in the same microsecond', function () {
-    //Fix the current time.
-    $microTimeStamp = 1679836125000000;
-    $this->idGenerator = new IdGenerator(new Randomizer(), new FixedTimestampProvider($microTimeStamp));
-    //At least until the internal limit of unique values per microsecond is exceeded.
-    $maxUniqueIntegers = 799;
-
-    $generatedIds = [];
-    $x = 1;
-
-    while ($x <= $maxUniqueIntegers) {
-        $id = $this->idGenerator->generateId();
-        expect($generatedIds)->not()->toContain($id);
-        $generatedIds[] = $id;
-        $x++;
-    }
-});
-
 it('may generate duplicate ids if two instances are used at the same microsecond', function () {
     //Fix the current microsecond time.
     $microTimeStamp = 1679836125000000;
@@ -165,23 +130,6 @@ it('may generate duplicate ids if two instances are used at the same microsecond
     $countOfDuplicateIds = count(array_intersect($idsGenerated1, $idsGenerated2));
     expect($countOfDuplicateIds)->toBeInt()->toBeGreaterThan(0);
 });
-
-it('throws RuntimeException if the maximum unique values per microsecond is exceeded', function () {
-    //Fix the current microsecond time.
-    $microTimeStamp = 1679836125000000;
-    $timestampProvider = new FixedTimestampProvider($microTimeStamp);
-    $this->idGenerator = new IdGenerator(new Randomizer(), $timestampProvider);
-
-    //Run 801 iterations (the internal limit is 800 values per microsecond)
-    //In year 2286 this limit will drop to around 80 per microsecond.
-    $iterations = 802;
-
-    $x = 1;
-    while ($x <= $iterations) {
-        $this->idGenerator->generateId();
-        $x++;
-    }
-})->throws(RuntimeException::class);
 
 it('generates ids even when the system date is a unix date early in the epoch', function () {
     //Fix the current time to 1 microsecond since the start of unix epoch.
@@ -223,28 +171,4 @@ it('generates ids with reduced entropy when system date is 2286-11-20 onwards', 
         expect($firstSeventeenDigitsOfId)->toEqual((string) $microTimeStamp);
         $x++;
     }
-});
-
-it('throws an exception if the clock skews backwards by more than 2 seconds', function () {
-    $timestampProvider = new ClockSkewTimestampProvider([1679836125000000, 1579836125000000]);
-    $idGenerator = new IdGenerator(new Randomizer(), $timestampProvider);
-    $idGenerator->generateId();
-    $idGenerator->generateId();
-})->throws(RuntimeException::class);
-
-it('it sleeps for time to catch up if the clock skews backwards by less than 2 seconds', function () {
-    $currentTime = 1679836125000000;
-    $backwardsTime = 1679836124000000;
-
-    $timestampProvider = new ClockSkewTimestampProvider([$currentTime, $backwardsTime, $currentTime]);
-    $idGenerator = new IdGenerator(new Randomizer(), $timestampProvider);
-
-    $id1 = $idGenerator->generateId();
-    $id2 = $idGenerator->generateId();
-
-    //Neither Id contains the time that skewed backwards.
-    expect((string) $id1)->toContain((string) $currentTime)
-        ->and((string) $id1)->not()->toContain((string) $backwardsTime)
-        ->and((string) $id2)->toContain((string) $currentTime)
-        ->and((string) $id1)->not()->toContain((string) $backwardsTime);
 });

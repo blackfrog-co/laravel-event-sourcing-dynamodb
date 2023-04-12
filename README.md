@@ -25,16 +25,20 @@ TODOs for Release:
 - Write some basic docs. (WIP)
 - IdGenerator is a bit over-engineered, simplify it e.g. there's probably no need for it be a singleton with its own
   collision prevention, it's not going to be realistic to call the same instance twice in one microsecond.
-- Persist() with null uuid?
 - See if we can solve for LazyCollection->remember().
 
 ## Features
 
 - Provides a DynamoDB implementation for `StoredEventRepository` and `SnapshotRepository`.
-- Complete compatibility with the Spatie Eloquent implementations.
+- Compatibility with the Spatie Eloquent implementations. See [minor differences](#minor-differences).
 - Unlimited [snapshot](#snapshots) size.
 - CreateTables command to get you started quickly.
 - Optional support for [strongly consistent reads](#read-consistency) (with caveats).
+
+## Minor Differences
+
+- The default `EloquentStoredEventRepository:store()` implementation converts a `null` `$uuid` argument to an empty
+  string for storage. DynamoDb does not allow empty strings, so we store this as the string `'null'`.
 
 ## How It Works
 

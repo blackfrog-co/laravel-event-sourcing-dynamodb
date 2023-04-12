@@ -26,7 +26,7 @@ afterEach(function () {
     $this->deleteTables();
 });
 
-it('can store and retrieve an event', function () {
+it('can persist and retrieve an event', function () {
     $storedEvent = $this->storedEventRepository
         ->persist(new DummyStorableEvent('yahhh'), Uuid::uuid4());
 
@@ -41,6 +41,16 @@ it('can store and retrieve an event', function () {
 
     expect($retrievedEvent2)->toEqual($storedEvent2)
         ->and($retrievedEvent2)->not()->toEqual($storedEvent);
+});
+
+it('can persist and retrieve an event with a null uuid', function () {
+    $storedEvent = $this->storedEventRepository
+        ->persist(new DummyStorableEvent('blahh'), null);
+
+    $retrievedEvent = $this->storedEventRepository->find($storedEvent->id);
+
+    expect($retrievedEvent)->toEqual($storedEvent)
+        ->and($retrievedEvent->aggregate_uuid)->toEqual('null');
 });
 
 it('can store many events', function () {

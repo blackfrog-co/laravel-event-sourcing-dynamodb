@@ -30,7 +30,7 @@ readonly class StoredEventFactory
         return new StoredEvent([
             'id' => $id,
             'event_properties' => $this->eventSerializer->serialize(clone $event),
-            'aggregate_uuid' => $uuid,
+            'aggregate_uuid' => $uuid ?? 'null',
             'aggregate_version' => $event->aggregateRootVersion() ?? 1,
             'event_version' => $event->eventVersion(),
             'event_class' => $this->getEventClass(get_class($event)),
@@ -48,7 +48,7 @@ readonly class StoredEventFactory
         return new StoredEvent([
             'id' => $dynamoItem['id'],
             'event_properties' => $dynamoItem['event_properties'],
-            'aggregate_uuid' => $dynamoItem['aggregate_uuid'] ?? '',
+            'aggregate_uuid' => $dynamoItem['aggregate_uuid'] ?? 'null',
             'aggregate_version' => (string) $dynamoItem['aggregate_version'],
             'event_version' => $dynamoItem['event_version'],
             'event_class' => $dynamoItem['event_class'],

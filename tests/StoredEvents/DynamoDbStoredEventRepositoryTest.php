@@ -48,7 +48,10 @@ it('can store many events', function () {
     $eventOne = new DummyStorableEvent('blahh');
     $eventTwo = new DummyStorableEvent('yahhh');
 
-    $this->storedEventRepository->persistMany([$eventOne, $eventTwo], $aggregateUuid);
+    $persistedEvents = $this->storedEventRepository->persistMany([$eventOne, $eventTwo], $aggregateUuid);
+
+    expect($persistedEvents)->count()->toEqual(2)
+        ->and($persistedEvents->first())->toBeInstanceOf(StoredEvent::class);
 
     $retrievedEvents = $this->storedEventRepository->retrieveAll($aggregateUuid);
 

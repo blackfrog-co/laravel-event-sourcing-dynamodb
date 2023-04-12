@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 // config for BlackFrog/LaravelEventSourcingDynamodb
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\MicroTimestampProvider;
+use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\TimeStampIdGenerator;
 
 return [
     'dynamodb-client' => [
@@ -68,5 +69,6 @@ return [
         'BillingMode' => 'PAY_PER_REQUEST',
     ],
 
+    'id_generator' => TimeStampIdGenerator::class,
     'id_timestamp_provider' => MicroTimestampProvider::class,
 ];

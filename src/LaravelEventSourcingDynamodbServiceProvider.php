@@ -8,6 +8,7 @@ use Aws\DynamoDb\DynamoDbClient;
 use BlackFrog\LaravelEventSourcingDynamodb\Commands\CreateTables;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\MicroTimestampProvider;
+use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\TimeStampIdGenerator;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\TimestampProvider;
 use BlackFrog\LaravelEventSourcingDynamodb\Snapshots\DynamoDbSnapshotRepository;
 use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\DynamoDbStoredEventRepository;
@@ -21,9 +22,15 @@ class LaravelEventSourcingDynamodbServiceProvider extends PackageServiceProvider
     {
         parent::register();
 
-        $this->app->singleton(IdGenerator::class);
+        $this->app->singleton(
+            IdGenerator::class,
+            config(
+                'event-sourcing-dynamodb.id_generator',
+                TimeStampIdGenerator::class
+            )
+        );
 
-        $this->app->bind(
+        $this->app->singleton(
             TimestampProvider::class,
             config(
                 'event-sourcing-dynamodb.id_timestamp_provider',

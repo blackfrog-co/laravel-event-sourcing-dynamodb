@@ -3,21 +3,11 @@
 A DynamoDB driver for `spatie/laravel-event-sourcing` allowing for a serverless approach to data storage.
 
 ! Work In Progress ! Not yet suitable for use. The package is functionally complete but has only had light real world
-testing on the example Larabank project.
-
-The package endeavours to have no behaviour change when compared to the original Spatie Eloquent implementation.
-This causes a few choices and compromises in dynamo table design that might seem strange otherwise.
-
-If you're interested in this project please leave a note in the discussions section, and I'll let you know when the
-first
-versioned release drops.
-
-Requires 64bit PHP 8.2 due to the way it generates unique ids.
+testing on the example Larabank project. Please wait for the first Semver versioned release.
 
 TODOs for Release:
 
 - `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()` uses a filter expression which isn't efficient.
-- Handling for manageable DynamoDb errors.
 - Review approach to handling event metadata, ensure its compatible.
 - Copy and modify any parts of the main package test suite that can give more end to end coverage.
 - See if we can solve for LazyCollection->remember().
@@ -34,6 +24,10 @@ TODOs for Release:
 
 - The default `EloquentStoredEventRepository:store()` implementation converts a `null` `$uuid` argument to an empty
   string for storage. DynamoDb does not allow empty strings, so we store this as the string `'null'`.
+
+### Requirements
+- 64bit PHP 8.2
+- `"spatie/laravel-event-sourcing": "^7.3.3"`,
 
 ## How It Works
 
@@ -89,17 +83,14 @@ TODOs for Release:
 
 ### Event Ids
 
-- This package generates its own Int64 Ids for events. The Spatie package interfaces expect integer ids and the logic
-  expects them to be incrementing. DynamoDb does not provide incrementing ids.
+- This package generates its own 64bit `int` Ids for events. The Spatie package interfaces expect integer ids and the
+  logic expects them to be incrementing. DynamoDb does not provide incrementing ids.
 - The Ids consist of the current microsecond timestamp expressed as an integer plus 3 random digits appended to the end.
-- The timestamp component approximates the incrementing Id behaviour that's expected for events and the random digits
+  approximating the incrementing behaviour that's expected for event order and the random digits
   increase collision resistance in the unlikely event that two are generated in the same microsecond.
-- Collisions are possible but unlikely. The collision scenario would be two PHP processes generating ids and hitting the
-  same microsecond timestamp and then generating the same random 3 digit int to append to them.
-- This collision scenario is unhandled in the code and the consequences would depend on the design of your application.
+- Collisions are possible but unlikely and currently unhandled in the code, the consequences would depend on the design
+  of your application.
 - Consider also that, at scale, clock skew between servers could cause issues for this.
-- In the event that the random digits do not clash but the microsecond timestamp is the same, the event ordering
-  is determined by the random digits.
 - You can switch to your own implementation for generation of Ids by implementing the `IdGenerator` interface and
   updating the config key `id_generator`.
 
@@ -109,8 +100,8 @@ TODOs for Release:
 
 - You can switch to your own implementation of a timestamp provider for the provided `TimeStampIdGenerator` by
   implementing the `TimestampProvider` interface and updating the config key `id_timestamp_provider`. If you return a
-  shorter timestamp (e.g. seconds or milliseconds) the IdGenerator will fill the remainder of the 64bit Int with random
-  digits.
+  shorter timestamp (e.g. seconds or milliseconds) the TimeStampIdGenerator will fill the remainder of the 64bit Int
+  with random digits.
 
 ```
     'id_timestamp_provider' => TimeStampIdGenerator::class,

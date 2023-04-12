@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace BlackFrog\LaravelEventSourcingDynamodb\IdGeneration;
 
-class MicroTimeTimestampProvider implements TimestampProvider
+class MicroTimestampProvider implements TimestampProvider
 {
     public function microsecondsTimestamp(): int
     {

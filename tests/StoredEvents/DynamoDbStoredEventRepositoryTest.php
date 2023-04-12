@@ -53,7 +53,7 @@ it('can persist and retrieve an event with a null uuid', function () {
         ->and($retrievedEvent->aggregate_uuid)->toEqual('null');
 });
 
-it('can store many events', function () {
+it('can persist many events', function () {
     $aggregateUuid = Uuid::uuid4();
     $eventOne = new DummyStorableEvent('blahh');
     $eventTwo = new DummyStorableEvent('yahhh');

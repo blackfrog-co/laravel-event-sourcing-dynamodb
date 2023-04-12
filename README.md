@@ -3,7 +3,7 @@
 A DynamoDB driver for [`spatie/laravel-event-sourcing`](https://github.com/spatie/laravel-event-sourcing) allowing for a
 serverless approach to data storage.
 
-Event sourcing can be complicated, and so can DynamoDB, make sure you have a decent grasp of DynamoDb and read the whole
+Event sourcing can be complicated, and so can DynamoDB, make sure you have a decent grasp of DynamoDB and read the whole
 README before choosing this approach.
 
 **! Work In Progress !** Not yet suitable for use. The package is functionally complete but has only had light real
@@ -27,7 +27,7 @@ TODOs for Release:
 ### Minor Differences
 
 - The default `EloquentStoredEventRepository:store()` implementation converts a `null` `$uuid` argument to an empty
-  string for storage. DynamoDb does not allow empty strings, so we store this as the string `'null'`.
+  string for storage. DynamoDB does not allow empty strings, so we store this as the string `'null'`.
 
 ### Requirements
 
@@ -50,12 +50,12 @@ TODOs for Release:
 
 ### Snapshots
 
-- Snapshots are stored in a single table, but as one or more items, allowing snapshots to exceed the DynamoDb 400KB
+- Snapshots are stored in a single table, but as one or more items, allowing snapshots to exceed the DynamoDB 400KB
   limit in size. The table has the `aggregate_uuid` as the `HASH` key and `id_part` as the `RANGE` key.
 - PHP `serialize()` is used on the output of you aggregate root's `getState()` method and the results are then base64
   encoded and split into multiple parts if too large to fit inside a single DynamoDB item (400KB limit).
 - When a snapshot is retrieved the parts are recombined behind the scenes to rehydrate your aggregate root.
-- The total size of snapshots is not limited by DynamoDb and only constrained by the PHP memory limit of the process
+- The total size of snapshots is not limited by DynamoDB and only constrained by the PHP memory limit of the process
   working with them.
 
 ### Read Consistency
@@ -69,9 +69,9 @@ TODOs for Release:
 
 ## Limitations
 
-### DynamoDb
+### DynamoDB
 
-- Individual Events cannot exceed 400KB in size, which is max size of a DynamoDb item.
+- Individual Events cannot exceed 400KB in size, which is max size of a DynamoDB item.
 - The maximum size of all events data per Aggregate UUID is 10GB due to the use of
   a [Local Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSI.html), If you do not
   intend to use the [read consistency](#read-consistency) feature, you can remove this limitation by moving the
@@ -83,13 +83,13 @@ TODOs for Release:
 
 - The spatie package has a method on its `AggregateRoot` base class called `persistInTransaction()`, this creates a
   Laravel DB transaction around the storage of events. There's currently no way for the Repository to know about this
-  transaction, so we aren't able to implement it for DynamoDb. This is not used by the package internally, so you only
+  transaction, so we aren't able to implement it for DynamoDB. This is not used by the package internally, so you only
   need to be aware if you use this method yourself.
 
 ### Event Ids
 
 - This package generates its own 64bit `int` Ids for events. The Spatie package interfaces expect integer ids and the
-  logic expects them to be incrementing. DynamoDb does not provide incrementing ids.
+  logic expects them to be incrementing. DynamoDB does not provide incrementing ids.
 - The Ids consist of the current microsecond timestamp expressed as an integer plus 3 random digits appended to the end.
   approximating the incrementing behaviour that's expected for event order and the random digits
   increase collision resistance in the unlikely event that two are generated in the same microsecond.
@@ -138,12 +138,12 @@ php artisan vendor:publish --tag="laravel-event-sourcing-dynamodb-config"
 Review the config key `dynamodb-client` and make sure the appropriate ENV variables are set, or you may wish to use
 your own ENV variable names if the package defaults clash for you. This array is the configuration array passed to
 `Aws\DynamoDb\DynamoDbClient` so you can modify it to use anything the AWS package supports, including alternative
-authentication options. If you already use AWS, for example with DynamoDb as a Cache driver for Laravel, you should
+authentication options. If you already use AWS, for example with DynamoDB as a Cache driver for Laravel, you should
 check and align your configuration for this with the one for this package to avoid confusion or duplication.
 
 You can change the default table names using the `event-table` and `snapshot-table` config keys.
 
-### Create DynamoDb Tables
+### Create DynamoDB Tables
 
 You can create the relevant DynamoDb tables with `php artisan event-sourcing-dynamodb:create-tables`. This requires
 appropriate AWS permissions to do so and is probably unwise to use in a production scenario. You can see (and modify at
@@ -172,7 +172,7 @@ composer test
 
 For local development you can use:
 [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html)
-There are some minor differences in behaviour from the real service, and we recommend testing against real DynamoDb in
+There are some minor differences in behaviour from the real service, and we recommend testing against real DynamoDB in
 your AWS account before launching your project.
 
 ## Changelog

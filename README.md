@@ -75,7 +75,7 @@ TODOs for Release:
 - Individual Events cannot exceed 400KB in size, which is max size of a DynamoDb item.
 - The maximum size of all events data per Aggregate UUID is 10GB due to the use of
   a [Local Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSI.html), If you do not
-  intend to use the read consistency feature, you can remove this limitation by moving the
+  intend to use the [read consistency](#read-consistency) feature, you can remove this limitation by moving the
   index `aggregate_uuid-version-index` to the `GlobalSecondaryIndexes` **before** creating tables.
 - The package expects `PAY_PER_REQUEST` billing mode behaviour and doesn't currently support provisioned throughput.
   For example, there's no handling of throughput exceeded exceptions nor a wait/retry mechanism for this.

@@ -1,9 +1,13 @@
-# An AWS DynamoDB driver for spatie/laravel-event-sourcing
+# An AWS DynamoDB driver for Spatie Laravel Event Sourcing
 
-A DynamoDB driver for `spatie/laravel-event-sourcing` allowing for a serverless approach to data storage.
+A DynamoDB driver for [`spatie/laravel-event-sourcing`](https://github.com/spatie/laravel-event-sourcing) allowing for a
+serverless approach to data storage.
 
-! Work In Progress ! Not yet suitable for use. The package is functionally complete but has only had light real world
-testing on the example Larabank project. Please wait for the first Semver versioned release.
+Event sourcing can be complicated, and so can DynamoDB, make sure you have a decent grasp of DynamoDb and read the whole
+README before choosing this approach.
+
+**! Work In Progress !** Not yet suitable for use. The package is functionally complete but has only had light real
+world testing on the example Larabank project. Please wait for the first SemVer versioned release.
 
 TODOs for Release:
 
@@ -26,6 +30,7 @@ TODOs for Release:
   string for storage. DynamoDb does not allow empty strings, so we store this as the string `'null'`.
 
 ### Requirements
+
 - 64bit PHP 8.2
 - `"spatie/laravel-event-sourcing": "^7.3.3"`,
 
@@ -64,7 +69,7 @@ TODOs for Release:
 
 ## Limitations
 
-### Dynamo Db
+### DynamoDb
 
 - Individual Events cannot exceed 400KB in size, which is max size of a DynamoDb item.
 - The maximum size of all events data per Aggregate UUID is 10GB due to the use of

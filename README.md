@@ -3,7 +3,7 @@
 **! Work In Progress !** Not yet suitable for use. Please wait for the first SemVer versioned release.
 
 A DynamoDB driver for [`spatie/laravel-event-sourcing`](https://github.com/spatie/laravel-event-sourcing) allowing for a
-serverless approach to data storage.
+serverless approach to your event and snapshot data storage.
 
 **Why use this?**
 
@@ -27,9 +27,6 @@ serverless approach to data storage.
   expensive and slow. [Fathom Analytics struggled with this problem](https://usefathom.com/blog/ditched-dynamodb).
 - You don't want to invest time into understanding DynamoDB and its strengths and weaknesses.
 - You haven't read the whole of this README!
-
-Event sourcing can be complicated, and so can DynamoDB, make sure you have a decent grasp of DynamoDB and read the whole
-README before choosing this approach.
 
 **TODOs for Release:**
 

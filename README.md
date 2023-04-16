@@ -24,7 +24,7 @@ serverless approach to data storage.
 - You want to avoid lock in to AWS as a cloud vendor.
 - You want to add many custom queries for Events or Snapshots that the package doesn't currently offer.
 - You want to be able to do complex analytics and queries on your DynamoDB event tables in the future. This could get
-  expensive and slow. Fathom Analytics struggled with this problem](https://usefathom.com/blog/ditched-dynamodb).
+  expensive and slow. [Fathom Analytics struggled with this problem](https://usefathom.com/blog/ditched-dynamodb).
 - You don't want to invest time into understanding DynamoDB and its strengths and weaknesses.
 - You haven't read the whole of this README!
 

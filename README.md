@@ -14,7 +14,7 @@ TODOs for Release:
 - `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()` uses a filter expression which isn't efficient.
 - Review approach to handling event metadata, ensure its compatible.
 - Copy and modify any parts of the main package test suite that can give more end to end coverage.
-- See if we can solve for LazyCollection->remember().
+- We're currently using LazyCollection->remember(), see if this can be avoided.
 
 ## Features
 
@@ -28,6 +28,8 @@ TODOs for Release:
 
 - The default `EloquentStoredEventRepository:store()` implementation converts a `null` `$uuid` argument to an empty
   string for storage. DynamoDB does not allow empty strings, so we store this as the string `'null'`.
+- There's currently no support for `persistInTransaction()` on AggregateRoots, the package doesn't use this method
+  out of the box itself, but you might. [Read More](#transactions).
 
 ### Requirements
 
@@ -41,10 +43,12 @@ TODOs for Release:
 - Events are stored in a table with `aggregate_uuid` as `HASH` (partition) key and `id` as `RANGE` key.
 - The events table has two indexes to cover the behaviours of the `StoredEventRepository` interface.
 - A [Global Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html) (projects all
-  attributes) that has the `id` as both the `HASH` and `RANGE` keys supports finding events by their id without their
-  aggregate UUID, and preserves event order when fetching all events.
+  attributes) that has the `id` as both the `HASH` and `RANGE` keys supports fetching events without their aggregate
+  uuid while preserving their order, both `find($id)` and `retrieveAll(null)` use this.
 - A [Local Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSI.html) (projects keys
-  only) has `aggregate_uuid` as `HASH` and `aggregate_version` as `RANGE` to support `getLatestAggregateVersion()`.
+  only) has `aggregate_uuid` as `HASH` and `aggregate_version` as `RANGE` to support `getLatestAggregateVersion()`. This
+  can be changed to a GSI if you don't need the read consistency feature. See [DynamoDB Limitations](#dynamodb) for more
+  info.
 - Event order is preserved using a generated incrementing integer id based on the current microsecond timestamp.
   This is necessary for compatibility with the Spatie package, see [Event Ids](#event-ids) for details.
 
@@ -52,6 +56,9 @@ TODOs for Release:
 
 - Snapshots are stored in a single table, but as one or more items, allowing snapshots to exceed the DynamoDB 400KB
   limit in size. The table has the `aggregate_uuid` as the `HASH` key and `id_part` as the `RANGE` key.
+- `id_part` is a composite of a randomly generated int id and the 'part number' of the snapshot. This does two things,
+  it means that the most recent snapshots are returned first when queried (using a DESC sort) and that the snapshot
+  parts are returned in the correct order if the snapshot required more than one DynamoDB item to be stored.
 - PHP `serialize()` is used on the output of you aggregate root's `getState()` method and the results are then base64
   encoded and split into multiple parts if too large to fit inside a single DynamoDB item (400KB limit).
 - When a snapshot is retrieved the parts are recombined behind the scenes to rehydrate your aggregate root.
@@ -64,8 +71,7 @@ TODOs for Release:
   configure [consistent reads from DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html)
   using the `read_consistency` config key (defaults to `false`.) This only applies to methods where you pass an
   aggregate root UUID as an argument. Some method calls on the EventRepository such as `find($id)`
-  and `retrieveAll(null)`
-  remain eventually consistent.
+  and `retrieveAll(null)` remain eventually consistent.
 
 ## Limitations
 

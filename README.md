@@ -9,28 +9,29 @@ serverless approach to data storage.
 
 **DynamoDB brings a number of advantages:**
 
-- It's serverless, scaling cost entirely based on usage, unlike the database solutions supported through Eloquent.
+- It's serverless, scaling cost and capacity starting from zero and entirely based on usage, unlike the database
+  solutions supported through Eloquent.
 - It's fast and cheap when you stick to the planned access patterns, i.e. using the methods on the Spatie interfaces.
 - It can easily connect you to a wider AWS event sourcing ecosystem, sharing your events with other apps & services
   via [DynamoDB Streams](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Streams.html) and [Event
   Bridge](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-dynamodb.html).
-- It pairs perfectly with Vapor, getting rid of your fixed RDMS costs.
-- Laravel already has official support built in for DynamoDB as Cache and Session drivers, so you can use those too
-  for a simpler more consistent tech stack.
+- It pairs perfectly with [Laravel Vapor](https://vapor.laravel.com/), getting rid of any fixed monthly RDS costs.
+- Laravel already has official support built in for DynamoDB as both a Cache and Session driver, so you can use those too
+  for a simpler more consistent serverless stack.
 
 **Know when it's not right for you:**
 
 - You want to avoid lock in to AWS as a cloud vendor.
-- You want to add many custom methods and query Events or Snapshots in a variety of ways the package doesn't offer.
-- You want to be able to do complex analytics and queries on your event stream in the future. This could get expensive
-  and slow. Fathom Analytics struggled with this problem](https://usefathom.com/blog/ditched-dynamodb).
-- You don't want to invest the time into understanding DynamoDB and its strengths and weaknesses.
+- You want to add many custom queries for Events or Snapshots that the package doesn't currently offer.
+- You want to be able to do complex analytics and queries on your DynamoDB event tables in the future. This could get
+  expensive and slow. Fathom Analytics struggled with this problem](https://usefathom.com/blog/ditched-dynamodb).
+- You don't want to invest time into understanding DynamoDB and its strengths and weaknesses.
 - You haven't read the whole of this README!
 
 Event sourcing can be complicated, and so can DynamoDB, make sure you have a decent grasp of DynamoDB and read the whole
 README before choosing this approach.
 
-TODOs for Release:
+**TODOs for Release:**
 
 - `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()` uses a filter expression which isn't efficient.
 - Review approach to handling event metadata, ensure its compatible.

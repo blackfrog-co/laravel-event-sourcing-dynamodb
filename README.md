@@ -1,13 +1,34 @@
 # An AWS DynamoDB driver for Spatie Laravel Event Sourcing
 
+**! Work In Progress !** Not yet suitable for use. Please wait for the first SemVer versioned release.
+
 A DynamoDB driver for [`spatie/laravel-event-sourcing`](https://github.com/spatie/laravel-event-sourcing) allowing for a
 serverless approach to data storage.
 
+**Why use this?**
+
+**DynamoDB brings a number of advantages:**
+
+- It's serverless, scaling cost entirely based on usage, unlike the database solutions supported through Eloquent.
+- It's fast and cheap when you stick to the planned access patterns, i.e. using the methods on the Spatie interfaces.
+- It can easily connect you to a wider AWS event sourcing ecosystem, sharing your events with other apps & services
+  via [DynamoDB Streams](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Streams.html) and [Event
+  Bridge](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-dynamodb.html).
+- It pairs perfectly with Vapor, getting rid of your fixed RDMS costs.
+- Laravel already has official support built in for DynamoDB as Cache and Session drivers, so you can use those too
+  for a simpler more consistent tech stack.
+
+**Know when it's not right for you:**
+
+- You want to avoid lock in to AWS as a cloud vendor.
+- You want to add many custom methods and query Events or Snapshots in a variety of ways the package doesn't offer.
+- You want to be able to do complex analytics and queries on your event stream in the future. This could get expensive
+  and slow. For example, [Fathom Analytics struggled with this problem](https://usefathom.com/blog/ditched-dynamodb).
+- You don't want to invest the time into understanding DynamoDB and its strengths and weaknesses.
+- You haven't read the whole this README!
+
 Event sourcing can be complicated, and so can DynamoDB, make sure you have a decent grasp of DynamoDB and read the whole
 README before choosing this approach.
-
-**! Work In Progress !** Not yet suitable for use. The package is functionally complete but has only had light real
-world testing on the example Larabank project. Please wait for the first SemVer versioned release.
 
 TODOs for Release:
 
@@ -180,6 +201,14 @@ For local development you can use:
 [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html)
 There are some minor differences in behaviour from the real service, and we recommend testing against real DynamoDB in
 your AWS account before launching your project.
+
+## Feature Roadmap
+
+- Support for automatic event removal of events with
+  the [DynamoDB Time To Live (TTL)](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html) feature,
+  specified per event.
+- More granular control over read consistency mode, e.g. configurable per method, or able to change a repo binding
+  on the fly to get one that is read consistent.
 
 ## Changelog
 

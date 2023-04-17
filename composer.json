@@ -1,6 +1,6 @@
 {
     "name": "blackfrog/laravel-event-sourcing-dynamodb",
-    "description": "An AWS DynamoDB driver for spatie/laravel-event-sourcing",
+    "description": "An AWS DynamoDB driver for Spatie Laravel Event Sourcing",
     "keywords": [
         "blackfrog",
         "dynamodb",

@@ -21,7 +21,8 @@ serverless approach to your event and snapshot data storage.
   via [DynamoDB Streams](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Streams.html) and [Event
   Bridge](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-dynamodb.html).
 - It pairs perfectly with [Laravel Vapor](https://vapor.laravel.com/), getting rid of any fixed monthly RDS costs.
-- Laravel already has official support built in for DynamoDB as both a Cache and Session driver, so you can use those too
+- Laravel already has official support built in for DynamoDB as both a Cache and Session driver, so you can use those
+  too
   for a simpler more consistent serverless stack.
 
 **Know when it's not right for you:**
@@ -38,7 +39,6 @@ serverless approach to your event and snapshot data storage.
 - `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()` uses a filter expression which isn't efficient.
 - Review approach to handling event metadata, ensure its compatible.
 - Copy and modify any parts of the main package test suite that can give more end to end coverage.
-- We're currently using LazyCollection->remember(), see if this can be avoided.
 
 ## Features
 
@@ -47,6 +47,7 @@ serverless approach to your event and snapshot data storage.
 - Unlimited [snapshot](#snapshots) size.
 - CreateTables command to get you started quickly.
 - Optional support for [strongly consistent reads](#read-consistency) (with caveats).
+- [Lazy Collection support](#lazy-collections), backed by AWS's PHP paginator.
 
 ### Minor Differences
 
@@ -97,6 +98,12 @@ serverless approach to your event and snapshot data storage.
   aggregate root UUID as an argument. Some method calls on the EventRepository such as `find($id)`
   and `retrieveAll(null)` remain eventually consistent.
 
+### Lazy Collections
+
+- The package implements a paginator that lets you iterate through large result sets as LazyCollections, backed by the
+  AWS PHP paginator. However, bear in mind this can result in repeated DynamoDB requests, if you would rather avoid this
+  and keep the results in memory after you've access them, just call `->remember()` on the collection.
+
 ## Limitations
 
 ### DynamoDB
@@ -141,11 +148,6 @@ serverless approach to your event and snapshot data storage.
 ```
     'id_timestamp_provider' => TimeStampIdGenerator::class,
 ```
-
-### LazyCollections
-
-- The package currently calls the `remember()` method on LazyCollections before it returns them. This limits the
-  complexity of the pagination required but means that if you traverse the entire collection it will remain in memory.
 
 ## Getting Started
 

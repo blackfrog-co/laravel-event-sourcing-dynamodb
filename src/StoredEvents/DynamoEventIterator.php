@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BlackFrog\LaravelEventSourcingDynamodb\StoredEvents;
 
+use Aws\Result;
 use Aws\ResultPaginator;
 use Closure;
 use Iterator;
@@ -11,7 +12,7 @@ use Spatie\EventSourcing\StoredEvents\StoredEvent;
 
 class DynamoEventIterator implements Iterator
 {
-    private ?int $itemsOnPage;
+    private ?int $pageItemCount = null;
 
     private int $itemNumber = 1;
 
@@ -21,8 +22,20 @@ class DynamoEventIterator implements Iterator
         private readonly ResultPaginator $paginator,
         private readonly Closure $itemProcessor
     ) {
-        $firstResult = $this->paginator->current();
-        $this->itemsOnPage = count($firstResult->get('Items'));
+    }
+
+    private function getPageItemCount(): int
+    {
+        if ($this->pageItemCount === null) {
+            $this->pageItemCount = $this->getResult()->get('Count');
+        }
+
+        return $this->pageItemCount;
+    }
+
+    private function getResult(): Result
+    {
+        return $this->paginator->current();
     }
 
     public function current(): StoredEvent|false
@@ -42,7 +55,7 @@ class DynamoEventIterator implements Iterator
 
     public function valid(): bool
     {
-        if ($this->itemsOnPage === null || $this->itemsOnPage === 0) {
+        if ($this->getPageItemCount() === 0) {
             return false;
         }
 
@@ -53,7 +66,7 @@ class DynamoEventIterator implements Iterator
 
     public function next(): void
     {
-        if (($this->itemPageIndex + 1) === $this->itemsOnPage) {
+        if (($this->itemPageIndex + 1) === $this->getPageItemCount()) {
             $this->nextPage();
 
             return;
@@ -70,14 +83,12 @@ class DynamoEventIterator implements Iterator
         $currentPage = $this->paginator->current();
 
         if ($currentPage === false) {
-            $this->itemsOnPage = null;
+            $this->pageItemCount = 0;
 
             return;
         }
 
-        $result = $this->paginator->current();
-        $this->itemsOnPage = count($result->get('Items'));
-
+        $this->pageItemCount = null;
         $this->itemPageIndex = 0;
         $this->itemNumber++;
     }
@@ -92,8 +103,6 @@ class DynamoEventIterator implements Iterator
         $this->paginator->rewind();
         $this->itemNumber = 1;
         $this->itemPageIndex = 0;
-
-        $result = $this->paginator->current();
-        $this->itemsOnPage = count($result->get('Items'));
+        $this->pageItemCount = null;
     }
 }

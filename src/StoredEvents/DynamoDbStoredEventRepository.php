@@ -83,17 +83,15 @@ readonly class DynamoDbStoredEventRepository implements StoredEventRepository
     private function lazyCollectionFromPaginator(ResultPaginator $paginator): LazyCollection
     {
         return LazyCollection::make(
-            function () use (&$paginator) {
-                while ($result = $paginator->current()) {
-                    foreach ($result->get('Items') as $item) {
-                        $dynamoItem = $this->dynamoMarshaler->unmarshalItem($item);
-                        yield $this->storedEventFactory->storedEventFromDynamoItem($dynamoItem);
-                    }
+            new DynamoEventIterator(
+                $paginator,
+                function (array $awsItem): StoredEvent {
+                    $dynamoItem = $this->dynamoMarshaler->unmarshalItem($awsItem);
 
-                    $paginator->next();
+                    return $this->storedEventFactory->storedEventFromDynamoItem($dynamoItem);
                 }
-            }
-        )->remember();
+            )
+        );
     }
 
     public function retrieveAllStartingFrom(int $startingFrom, string $uuid = null): LazyCollection

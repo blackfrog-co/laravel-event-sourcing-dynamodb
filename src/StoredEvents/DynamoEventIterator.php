@@ -1,13 +1,15 @@
 <?php
 
-namespace BlackFrog\LaravelEventSourcingDynamodb;
+declare(strict_types=1);
+
+namespace BlackFrog\LaravelEventSourcingDynamodb\StoredEvents;
 
 use Aws\ResultPaginator;
 use Closure;
 use Iterator;
 use Spatie\EventSourcing\StoredEvents\StoredEvent;
 
-class StoredEventIterator implements Iterator
+class DynamoEventIterator implements Iterator
 {
     private ?int $itemsOnPage;
 

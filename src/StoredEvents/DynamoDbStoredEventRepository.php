@@ -8,7 +8,6 @@ use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Marshaler;
 use Aws\DynamoDb\WriteRequestBatch;
 use Aws\ResultPaginator;
-use BlackFrog\LaravelEventSourcingDynamodb\StoredEventIterator;
 use Carbon\CarbonInterface;
 use Illuminate\Support\LazyCollection;
 use Spatie\EventSourcing\StoredEvents\Repositories\StoredEventRepository;
@@ -84,7 +83,7 @@ readonly class DynamoDbStoredEventRepository implements StoredEventRepository
     private function lazyCollectionFromPaginator(ResultPaginator $paginator): LazyCollection
     {
         return LazyCollection::make(
-            new StoredEventIterator(
+            new DynamoEventIterator(
                 $paginator,
                 function (array $awsItem): StoredEvent {
                     $dynamoItem = $this->dynamoMarshaler->unmarshalItem($awsItem);

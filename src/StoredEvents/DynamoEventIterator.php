@@ -48,9 +48,9 @@ class DynamoEventIterator implements Iterator
 
         $awsItem = $result->get('Items')[$this->itemPageIndex];
 
-        $func = $this->itemProcessor;
+        $itemProcessor = $this->itemProcessor;
 
-        return $func($awsItem);
+        return $itemProcessor($awsItem);
     }
 
     public function valid(): bool

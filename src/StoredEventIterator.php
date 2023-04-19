@@ -2,12 +2,12 @@
 
 namespace BlackFrog\LaravelEventSourcingDynamodb;
 
-use Aws\DynamoDb\Marshaler;
 use Aws\ResultPaginator;
-use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\StoredEventFactory;
+use Closure;
 use Iterator;
+use Spatie\EventSourcing\StoredEvents\StoredEvent;
 
-class AwsItemIterator implements Iterator
+class StoredEventIterator implements Iterator
 {
     private ?int $itemsOnPage;
 
@@ -15,29 +15,38 @@ class AwsItemIterator implements Iterator
 
     private int $itemPageIndex = 0;
 
-    private Marshaler $marshaler;
-
-    private StoredEventFactory $storedEventFactory;
-
-    public function __construct(private ResultPaginator $paginator)
-    {
-        $this->marshaler = app(Marshaler::class);
-        $this->storedEventFactory = app(StoredEventFactory::class);
+    public function __construct(
+        private readonly ResultPaginator $paginator,
+        private readonly Closure $itemProcessor
+    ) {
         $firstResult = $this->paginator->current();
         $this->itemsOnPage = count($firstResult->get('Items'));
     }
 
-    public function current(): mixed
+    public function current(): StoredEvent|false
     {
+        if ($this->valid() === false) {
+            return false;
+        }
+
         $result = $this->paginator->current();
 
         $awsItem = $result->get('Items')[$this->itemPageIndex];
 
-        $dynamoItem = $this->marshaler->unmarshalItem($awsItem);
+        $func = $this->itemProcessor;
 
-        $storedEvent = $this->storedEventFactory->storedEventFromDynamoItem($dynamoItem);
+        return $func($awsItem);
+    }
 
-        return $storedEvent;
+    public function valid(): bool
+    {
+        if ($this->itemsOnPage === null || $this->itemsOnPage === 0) {
+            return false;
+        }
+
+        $result = $this->paginator->current();
+
+        return isset($result->get('Items')[$this->itemPageIndex]);
     }
 
     public function next(): void
@@ -71,24 +80,9 @@ class AwsItemIterator implements Iterator
         $this->itemNumber++;
     }
 
-    public function key(): mixed
+    public function key(): ?int
     {
         return $this->valid() ? $this->itemNumber - 1 : null;
-    }
-
-    public function valid(): bool
-    {
-        if ($this->itemsOnPage === null) {
-            return false;
-        }
-
-        if ($this->itemsOnPage === 0) {
-            return false;
-        }
-
-        $result = $this->paginator->current();
-
-        return isset($result->get('Items')[$this->itemPageIndex]);
     }
 
     public function rewind(): void

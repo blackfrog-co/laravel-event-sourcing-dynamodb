@@ -189,7 +189,7 @@ it('can count all events for an aggregate root uuid starting from an event id', 
     //900 events for other aggregate roots
     while ($x <= $eventCount) {
         $this->storedEventRepository
-           ->persist(new DummyStorableEvent($randomString), $uuids[rand(0, 3)]);
+            ->persist(new DummyStorableEvent($randomString), $uuids[rand(0, 3)]);
         $x++;
     }
 

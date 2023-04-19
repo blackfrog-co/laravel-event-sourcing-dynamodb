@@ -203,11 +203,11 @@ composer test
 ## Local Development
 
 For local development you can use:
-[DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html)
-There are some minor differences in behaviour from the real service, and we recommend testing against real DynamoDB in
-your AWS account before launching your project.
+[DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html). There are some
+minor differences in behaviour from the real service, and we recommend testing against real DynamoDB in your AWS account
+before launching your project.
 
-## Feature Roadmap
+## Future Roadmap Ideas
 
 - Support for automatic event removal of events with
   the [DynamoDB Time To Live (TTL)](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html) feature,

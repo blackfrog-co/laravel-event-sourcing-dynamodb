@@ -26,7 +26,7 @@ afterEach(function () {
     $this->deleteTables();
 });
 
-it('can persist and retrieve an event', function () {
+it('persists and retrieves an event', function () {
     $storedEvent = $this->storedEventRepository
         ->persist(new DummyStorableEvent('yahhh'), Uuid::uuid4());
 
@@ -43,7 +43,7 @@ it('can persist and retrieve an event', function () {
         ->and($retrievedEvent2)->not()->toEqual($storedEvent);
 });
 
-it('can persist and retrieve an event with a null uuid', function () {
+it('persists and retrieves an event with a null uuid', function () {
     $storedEvent = $this->storedEventRepository
         ->persist(new DummyStorableEvent('blahh'), null);
 
@@ -53,7 +53,7 @@ it('can persist and retrieve an event with a null uuid', function () {
         ->and($retrievedEvent->aggregate_uuid)->toEqual('null');
 });
 
-it('can persist many events', function () {
+it('persists many events', function () {
     $aggregateUuid = Uuid::uuid4();
     $eventOne = new DummyStorableEvent('blahh');
     $eventTwo = new DummyStorableEvent('yahhh');
@@ -153,7 +153,7 @@ it('retrieves events in order by aggregateUuid', function () {
         ->and($storedEvents->last()->id)->toEqual($lastEvent->id);
 });
 
-it('can count all events starting from an event id', function () {
+it('counts all events starting from an event id', function () {
     $eventCount = 900;
     $x = 1;
 
@@ -178,7 +178,7 @@ it('can count all events starting from an event id', function () {
     expect($countedEvents)->toEqual(551);
 });
 
-it('can count all events for an aggregate root uuid starting from an event id', function () {
+it('counts all events for an aggregate root uuid starting from an event id', function () {
     $eventCount = 900;
     $x = 1;
 
@@ -212,7 +212,7 @@ it('can count all events for an aggregate root uuid starting from an event id', 
     expect($countedEvents)->toEqual(551);
 });
 
-it('can retrieve all events starting from an event id', function () {
+it('retrieves all events starting from an event id', function () {
     $eventCount = 900;
     $x = 1;
 
@@ -237,7 +237,7 @@ it('can retrieve all events starting from an event id', function () {
     expect($events->count())->toEqual(551);
 });
 
-it('can retrieve all events for an aggregate root uuid starting from an event id', function () {
+it('retrieves all events for an aggregate root uuid starting from an event id', function () {
     $eventCount = 900;
     $x = 1;
 
@@ -271,7 +271,7 @@ it('can retrieve all events for an aggregate root uuid starting from an event id
     expect($events->count())->toEqual(551);
 });
 
-it('can get the latest aggregate version for an aggregate root uuid', function () {
+it('gets the latest aggregate version for an aggregate root uuid', function () {
     $aggregateRootUuid = Uuid::uuid4();
     $event = new DummyStorableEvent('yahhh');
     $event->setAggregateRootVersion(1);
@@ -296,7 +296,7 @@ it('returns 0 for latest aggregate version if no events exist', function () {
     expect($latestAggregateVersion)->toBeInt()->toEqual(0);
 });
 
-it('can retrieve events after a version for an aggregate root uuid', function () {
+it('retrieves events after a version for an aggregate root uuid', function () {
     $aggregateRootUuid = Uuid::uuid4();
     $event = new DummyStorableEvent('yahhh');
 
@@ -327,10 +327,16 @@ it('can retrieve events after a version for an aggregate root uuid', function ()
         ->and($events->last()->id)->toEqual($event4->id);
 });
 
-it('it returns an empty collection when no events after a version for an aggregate root uuid', function () {
+it('returns an empty collection when no events after a version for an aggregate root uuid', function () {
     $aggregateRootUuid = Uuid::uuid4();
 
     $events = $this->storedEventRepository->retrieveAllAfterVersion(3, $aggregateRootUuid);
 
-    expect($events->count())->toEqual(0);
+    expect($events->count())->toEqual(0)->and($events->first())->toBeNull();
+});
+
+it('returns an empty collection when fetching all events when no events exists', function () {
+    $events = $this->storedEventRepository->retrieveAll();
+
+    expect($events->count())->toEqual(0)->and($events->first())->toBeNull();
 });

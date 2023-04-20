@@ -129,14 +129,17 @@ readonly class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function retrieveAllAfterVersion(int $aggregateVersion, string $aggregateUuid): LazyCollection
     {
+        //For this version and this aggregate uuid get the most recent event id.
+
+        $lastEventIdForAggregateVersion = $this->lastEventIdForAggregateVersion($aggregateUuid, $aggregateVersion);
+
         $resultPaginator = $this->dynamo->getPaginator('Query', [
             'TableName' => $this->table,
-            'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid',
+            'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid AND id > :id',
             'ExpressionAttributeValues' => [
                 ':aggregate_uuid' => ['S' => $aggregateUuid],
-                ':aggregate_version' => ['N' => $aggregateVersion],
+                ':id' => ['N' => $lastEventIdForAggregateVersion],
             ],
-            'FilterExpression' => 'aggregate_version > :aggregate_version',
             'ConsistentRead' => $this->readConsistency,
         ]);
 
@@ -223,6 +226,7 @@ readonly class DynamoDbStoredEventRepository implements StoredEventRepository
 
         //Duplicate id to work around dynamo indexing limitations, allowing consistent ordering.
         $storedEventArray['sort_id'] = $storedEventArray['id'];
+        $storedEventArray['version_uuid'] = $storedEventArray['aggregate_version'].'_'.$storedEventArray['aggregate_uuid'];
 
         //Format carbon object for storage. Temporary bodge, this needs more work.
         $metaDataCreatedAt = $storedEventArray['meta_data']['created-at'];
@@ -285,5 +289,31 @@ readonly class DynamoDbStoredEventRepository implements StoredEventRepository
         );
 
         return $item['aggregate_version'];
+    }
+
+    private function lastEventIdForAggregateVersion(string $uuid, int $version): int
+    {
+        $result = $this->dynamo->query([
+            'TableName' => $this->table,
+            'IndexName' => 'version_uuid-id-index',
+            'KeyConditionExpression' => 'version_uuid = :version_uuid',
+            'ExpressionAttributeValues' => [
+                ':version_uuid' => ['S' => $version.'_'.$uuid],
+            ],
+            'ProjectionExpression' => 'id',
+            'ScanIndexForward' => false,
+            'Limit' => 1,
+            'ConsistentRead' => $this->readConsistency,
+        ]);
+
+        if ($result->get('Count') === 0) {
+            return 0;
+        }
+
+        $item = $this->dynamoMarshaler->unmarshalItem(
+            $result->get('Items')[0]
+        );
+
+        return $item['id'];
     }
 }

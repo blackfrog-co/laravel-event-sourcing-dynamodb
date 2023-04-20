@@ -33,7 +33,6 @@ serverless approach to your event and snapshot data storage.
 
 **TODOs for first release:**
 
-- `DynamoDbStoredEventRepository::RetrieveAllAfterVersion()` uses a filter expression which isn't cost efficient.
 - Review approach to handling event metadata, ensure its compatible.
 - Copy and modify any parts of the main package test suite that can give more end to end coverage.
 

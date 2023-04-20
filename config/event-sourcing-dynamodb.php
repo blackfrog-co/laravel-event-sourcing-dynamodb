@@ -27,6 +27,7 @@ return [
             ['AttributeName' => 'sort_id', 'AttributeType' => 'N'],
             ['AttributeName' => 'aggregate_uuid', 'AttributeType' => 'S'],
             ['AttributeName' => 'aggregate_version', 'AttributeType' => 'N'],
+            ['AttributeName' => 'version_uuid', 'AttributeType' => 'S'],
         ],
         'KeySchema' => [
             ['AttributeName' => 'aggregate_uuid', 'KeyType' => 'HASH'],
@@ -50,6 +51,14 @@ return [
                     ['AttributeName' => 'sort_id', 'KeyType' => 'RANGE'],
                 ],
                 'Projection' => ['ProjectionType' => 'ALL'],
+            ],
+            [
+                'IndexName' => 'version_uuid-id-index',
+                'KeySchema' => [
+                    ['AttributeName' => 'version_uuid', 'KeyType' => 'HASH'],
+                    ['AttributeName' => 'id', 'KeyType' => 'RANGE'],
+                ],
+                'Projection' => ['ProjectionType' => 'KEYS_ONLY'],
             ],
         ],
         'BillingMode' => 'PAY_PER_REQUEST',

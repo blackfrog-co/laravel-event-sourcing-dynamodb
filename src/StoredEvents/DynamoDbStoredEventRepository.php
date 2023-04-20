@@ -129,8 +129,6 @@ readonly class DynamoDbStoredEventRepository implements StoredEventRepository
 
     public function retrieveAllAfterVersion(int $aggregateVersion, string $aggregateUuid): LazyCollection
     {
-        //For this version and this aggregate uuid get the most recent event id.
-
         $lastEventIdForAggregateVersion = $this->lastEventIdForAggregateVersion($aggregateUuid, $aggregateVersion);
 
         $resultPaginator = $this->dynamo->getPaginator('Query', [

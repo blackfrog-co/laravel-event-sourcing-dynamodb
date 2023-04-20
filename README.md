@@ -35,6 +35,8 @@ serverless approach to your event and snapshot data storage.
 
 - Review approach to handling event metadata, ensure its compatible.
 - Copy and modify any parts of the main package test suite that can give more end to end coverage.
+- Find a way to run the test suite twice, one with read consistency mode on to give us coverage for changes
+that might break compatibility with read consistency.
 
 ## Should I use DynamoDB?
 

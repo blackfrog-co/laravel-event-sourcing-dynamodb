@@ -101,7 +101,7 @@ serverless approach to your event and snapshot data storage.
 
 - The package implements a paginator that lets you iterate through large result sets as LazyCollections, backed by the
   AWS PHP paginator. However, bear in mind this can result in repeated DynamoDB requests, if you would rather avoid this
-  and keep the results in memory after you've access them, just call `->remember()` on the collection.
+  and keep the results in memory after you access them, just call `->remember()` on the collection.
 
 ## Limitations
 

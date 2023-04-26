@@ -224,7 +224,6 @@ readonly class DynamoDbStoredEventRepository implements StoredEventRepository
 
         //Extra attributes to work around dynamo indexing limitations, allowing consistent event ordering.
         $storedEventArray['sort_id'] = $storedEventArray['id'];
-        $storedEventArray['version_uuid'] = $storedEventArray['aggregate_version'].'_'.$storedEventArray['aggregate_uuid']; //Get rid?
         $storedEventArray['version_id'] = $storedEventArray['aggregate_version'].'_'.$storedEventArray['id'];
 
         //Format carbon object for storage. Temporary bodge, this needs more work.

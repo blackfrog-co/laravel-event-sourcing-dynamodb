@@ -72,8 +72,8 @@ that might break compatibility with read consistency.
   attributes) that has the `id` as both the `HASH` and `RANGE` keys supports fetching events without their aggregate
   uuid while preserving their order, both `find($id)` and `retrieveAll(null)` use this.
 - A [Local Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSI.html) (projects keys
-  only) has `aggregate_uuid` as `HASH` and `aggregate_version` as `RANGE` to support `getLatestAggregateVersion()`. This
-  can be changed to a GSI if you don't need the read consistency feature. See [DynamoDB Limitations](#dynamodb) for more
+  only) has `version_id` (composite of version and id) as `RANGE` to support `getLatestAggregateVersion()`. This
+  can be changed to a GSI if you definitely don't need the read consistency feature. See [DynamoDB Limitations](#dynamodb) for more
   info.
 - Event order is preserved using a generated incrementing integer id based on the current microsecond timestamp.
   This is necessary for compatibility with the Spatie package, see [Event Ids](#event-ids) for details.
@@ -97,7 +97,7 @@ that might break compatibility with read consistency.
   configure [consistent reads from DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html)
   using the `read_consistency` config key (defaults to `false`.) This only applies to methods where you pass an
   aggregate root UUID as an argument. Some method calls on the EventRepository such as `find($id)`
-  and `retrieveAll(null)` remain eventually consistent.
+  and `retrieveAll(null)` will remain eventually consistent.
 
 ### Lazy Collections
 
@@ -110,10 +110,10 @@ that might break compatibility with read consistency.
 ### DynamoDB
 
 - Individual Events cannot exceed 400KB in size, which is max size of a DynamoDB item.
-- The maximum size of all events data per Aggregate UUID is 10GB due to the use of
-  a [Local Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSI.html), If you do not
+- The maximum total size of all events data per Aggregate UUID is 10GB due to the use of
+  a [Local Secondary Index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSI.html). If you do not
   intend to use the [read consistency](#read-consistency) feature, you can remove this limitation by moving the
-  index `aggregate_uuid-version-index` to the `GlobalSecondaryIndexes` **before** creating tables.
+  index `aggregate_uuid-version-id-index` to the `GlobalSecondaryIndexes` **before** creating tables.
 - The package expects `PAY_PER_REQUEST` billing mode behaviour and doesn't currently support provisioned throughput.
   For example, there's no handling of throughput exceeded exceptions nor a wait/retry mechanism for this.
 
@@ -215,6 +215,7 @@ before launching your project.
   specified per event.
 - More granular control over read consistency mode, e.g. configurable per method, or able to change a repo binding
   on the fly to get one that is read consistent.
+- Support for provisioned capacity billing, specifically handling exceptions and retries.
 
 ## Changelog
 

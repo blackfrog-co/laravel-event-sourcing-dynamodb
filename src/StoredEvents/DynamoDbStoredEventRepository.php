@@ -222,9 +222,10 @@ readonly class DynamoDbStoredEventRepository implements StoredEventRepository
         $storedEventArray['aggregate_version'] = (int) $storedEventArray['aggregate_version'];
         $storedEventArray['created_at'] = (int) $storedEventArray['created_at'];
 
-        //Duplicate id to work around dynamo indexing limitations, allowing consistent ordering.
+        //Extra attributes to work around dynamo indexing limitations, allowing consistent event ordering.
         $storedEventArray['sort_id'] = $storedEventArray['id'];
-        $storedEventArray['version_uuid'] = $storedEventArray['aggregate_version'].'_'.$storedEventArray['aggregate_uuid'];
+        $storedEventArray['version_uuid'] = $storedEventArray['aggregate_version'].'_'.$storedEventArray['aggregate_uuid']; //Get rid?
+        $storedEventArray['version_id'] = $storedEventArray['aggregate_version'].'_'.$storedEventArray['id'];
 
         //Format carbon object for storage. Temporary bodge, this needs more work.
         $metaDataCreatedAt = $storedEventArray['meta_data']['created-at'];
@@ -267,12 +268,12 @@ readonly class DynamoDbStoredEventRepository implements StoredEventRepository
     {
         $result = $this->dynamo->query([
             'TableName' => $this->table,
-            'IndexName' => 'aggregate_uuid-version-index',
+            'IndexName' => 'aggregate_uuid-version-id-index',
             'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid',
             'ExpressionAttributeValues' => [
                 ':aggregate_uuid' => ['S' => $aggregateUuid],
             ],
-            'ProjectionExpression' => 'aggregate_version',
+            'ProjectionExpression' => 'version_id',
             'ScanIndexForward' => false,
             'Limit' => 1,
             'ConsistentRead' => $this->readConsistency,
@@ -286,17 +287,18 @@ readonly class DynamoDbStoredEventRepository implements StoredEventRepository
             $result->get('Items')[0]
         );
 
-        return $item['aggregate_version'];
+        return (int) explode('_', $item['version_id'])[0];
     }
 
     private function lastEventIdForAggregateVersion(string $uuid, int $version): int
     {
         $result = $this->dynamo->query([
             'TableName' => $this->table,
-            'IndexName' => 'version_uuid-id-index',
-            'KeyConditionExpression' => 'version_uuid = :version_uuid',
+            'IndexName' => 'aggregate_uuid-version-id-index',
+            'KeyConditionExpression' => 'aggregate_uuid = :aggregate_uuid and begins_with(version_id, :version)',
             'ExpressionAttributeValues' => [
-                ':version_uuid' => ['S' => $version.'_'.$uuid],
+                ':aggregate_uuid' => ['S' => $uuid],
+                ':version' => ['S' => "{$version}_"],
             ],
             'ProjectionExpression' => 'id',
             'ScanIndexForward' => false,

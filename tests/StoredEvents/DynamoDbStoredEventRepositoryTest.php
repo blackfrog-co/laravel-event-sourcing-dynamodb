@@ -10,7 +10,7 @@ beforeAll(function () {
     class DummyStorableEvent extends ShouldBeStored
     {
         public function __construct(
-          public readonly string $message
+            public readonly string $message
         ) {
         }
     }
@@ -274,15 +274,16 @@ it('retrieves all events for an aggregate root uuid starting from an event id', 
 it('gets the latest aggregate version for an aggregate root uuid', function () {
     $aggregateRootUuid = Uuid::uuid4();
     $event = new DummyStorableEvent('yahhh');
+
     $event->setAggregateRootVersion(1);
     $this->storedEventRepository
         ->persist($event, $aggregateRootUuid);
 
-    $event->setAggregateRootVersion(5);
+    $event->setAggregateRootVersion(3);
     $this->storedEventRepository
         ->persist($event, $aggregateRootUuid);
 
-    $event->setAggregateRootVersion(3);
+    $event->setAggregateRootVersion(5);
     $this->storedEventRepository
         ->persist($event, $aggregateRootUuid);
 
@@ -300,8 +301,16 @@ it('retrieves events after a version for an aggregate root uuid', function () {
     $aggregateRootUuid = Uuid::uuid4();
     $event = new DummyStorableEvent('yahhh');
 
-    $event->setAggregateRootVersion(5);
-    $event1 = $this->storedEventRepository
+    $event->setAggregateRootVersion(1);
+    $this->storedEventRepository
+        ->persist($event, $aggregateRootUuid);
+
+    $event->setAggregateRootVersion(3);
+    $this->storedEventRepository
+        ->persist($event, $aggregateRootUuid);
+
+    $event->setAggregateRootVersion(3);
+    $this->storedEventRepository
         ->persist($event, $aggregateRootUuid);
 
     $event->setAggregateRootVersion(3);
@@ -309,22 +318,22 @@ it('retrieves events after a version for an aggregate root uuid', function () {
         ->persist($event, $aggregateRootUuid);
 
     $event->setAggregateRootVersion(4);
-    $this->storedEventRepository
+    $firstEvent = $this->storedEventRepository
         ->persist($event, $aggregateRootUuid);
 
     $event->setAggregateRootVersion(4);
-    $event4 = $this->storedEventRepository
+    $this->storedEventRepository
         ->persist($event, $aggregateRootUuid);
 
-    $event->setAggregateRootVersion(1);
-    $this->storedEventRepository
+    $event->setAggregateRootVersion(5);
+    $lastEvent = $this->storedEventRepository
         ->persist($event, $aggregateRootUuid);
 
     $events = $this->storedEventRepository->retrieveAllAfterVersion(3, $aggregateRootUuid);
 
     expect($events->count())->toEqual(3)
-        ->and($events->first()->id)->toEqual($event1->id)
-        ->and($events->last()->id)->toEqual($event4->id);
+        ->and($events->first()->id)->toEqual($firstEvent->id)
+        ->and($events->last()->id)->toEqual($lastEvent->id);
 });
 
 it('returns an empty collection when no events after a version for an aggregate root uuid', function () {

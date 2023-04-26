@@ -27,6 +27,7 @@ return [
             ['AttributeName' => 'sort_id', 'AttributeType' => 'N'],
             ['AttributeName' => 'aggregate_uuid', 'AttributeType' => 'S'],
             ['AttributeName' => 'aggregate_version', 'AttributeType' => 'N'],
+            ['AttributeName' => 'version_id', 'AttributeType' => 'S'],
         ],
         'KeySchema' => [
             ['AttributeName' => 'aggregate_uuid', 'KeyType' => 'HASH'],
@@ -34,10 +35,10 @@ return [
         ],
         'LocalSecondaryIndexes' => [
             [
-                'IndexName' => 'aggregate_uuid-version-index',
+                'IndexName' => 'aggregate_uuid-version-id-index',
                 'KeySchema' => [
                     ['AttributeName' => 'aggregate_uuid', 'KeyType' => 'HASH'],
-                    ['AttributeName' => 'aggregate_version', 'KeyType' => 'RANGE'],
+                    ['AttributeName' => 'version_id', 'KeyType' => 'RANGE'],
                 ],
                 'Projection' => ['ProjectionType' => 'KEYS_ONLY'],
             ],

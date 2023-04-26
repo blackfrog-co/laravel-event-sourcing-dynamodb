@@ -10,7 +10,7 @@ beforeAll(function () {
     class DummyStorableEvent extends ShouldBeStored
     {
         public function __construct(
-          public readonly string $message
+            public readonly string $message
         ) {
         }
     }

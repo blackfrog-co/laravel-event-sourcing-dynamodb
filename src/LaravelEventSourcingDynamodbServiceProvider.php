@@ -39,7 +39,12 @@ class LaravelEventSourcingDynamodbServiceProvider extends PackageServiceProvider
         );
 
         $dynamoDbClient = function (): DynamoDbClient {
-            return new DynamoDbClient(config('event-sourcing-dynamodb.dynamodb-client'));
+            return new DynamoDbClient(
+                config(
+                    'event-sourcing-dynamodb.dynamodb-client',
+                    ['key' => 'fakeMyKeyId', 'secret' => 'fakeSecretAccessKey']
+                )
+            );
         };
 
         $this->app->when([

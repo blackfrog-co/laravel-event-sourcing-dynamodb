@@ -14,7 +14,7 @@ use Spatie\EventSourcing\StoredEvents\Repositories\StoredEventRepository;
 use Spatie\EventSourcing\StoredEvents\ShouldBeStored;
 use Spatie\EventSourcing\StoredEvents\StoredEvent;
 
-readonly class DynamoDbStoredEventRepository implements StoredEventRepository
+readonly class DynamoStoredEventRepository implements StoredEventRepository
 {
     protected string $table;
 

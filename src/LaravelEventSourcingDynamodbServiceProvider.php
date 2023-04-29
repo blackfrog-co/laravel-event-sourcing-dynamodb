@@ -10,8 +10,8 @@ use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\MicroTimestampProvider;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\TimeStampIdGenerator;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\TimestampProvider;
-use BlackFrog\LaravelEventSourcingDynamodb\Snapshots\DynamoDbSnapshotRepository;
-use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\DynamoDbStoredEventRepository;
+use BlackFrog\LaravelEventSourcingDynamodb\Snapshots\DynamoSnapshotRepository;
+use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\DynamoStoredEventRepository;
 use BlackFrog\LaravelEventSourcingDynamodb\Tables\TableManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -43,8 +43,8 @@ class LaravelEventSourcingDynamodbServiceProvider extends PackageServiceProvider
         };
 
         $this->app->when([
-            DynamoDbStoredEventRepository::class,
-            DynamoDbSnapshotRepository::class,
+            DynamoStoredEventRepository::class,
+            DynamoSnapshotRepository::class,
             CreateTables::class,
             TableManager::class,
         ])

@@ -12,7 +12,7 @@ use Illuminate\Support\Collection;
 use Spatie\EventSourcing\Snapshots\Snapshot;
 use Spatie\EventSourcing\Snapshots\SnapshotRepository;
 
-readonly class DynamoDbSnapshotRepository implements SnapshotRepository
+readonly class DynamoSnapshotRepository implements SnapshotRepository
 {
     protected string $table;
 

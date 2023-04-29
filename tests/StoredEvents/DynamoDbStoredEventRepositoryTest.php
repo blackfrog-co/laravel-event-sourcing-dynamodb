@@ -1,6 +1,6 @@
 <?php
 
-use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\DynamoDbStoredEventRepository;
+use BlackFrog\LaravelEventSourcingDynamodb\StoredEvents\DynamoStoredEventRepository;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 use Spatie\EventSourcing\StoredEvents\ShouldBeStored;
@@ -19,7 +19,7 @@ beforeAll(function () {
 beforeEach(function () {
     $this->createTables();
 
-    $this->storedEventRepository = app(DynamoDbStoredEventRepository::class);
+    $this->storedEventRepository = app(DynamoStoredEventRepository::class);
 });
 
 afterEach(function () {

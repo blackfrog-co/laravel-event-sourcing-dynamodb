@@ -3,7 +3,7 @@
 use Aws\DynamoDb\Marshaler;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\MicroTimestampProvider;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\TimeStampIdGenerator;
-use BlackFrog\LaravelEventSourcingDynamodb\Snapshots\DynamoDbSnapshotRepository;
+use BlackFrog\LaravelEventSourcingDynamodb\Snapshots\DynamoSnapshotRepository;
 use BlackFrog\LaravelEventSourcingDynamodb\Snapshots\StateSerializer;
 use Random\Randomizer;
 use Spatie\EventSourcing\Snapshots\Snapshot;
@@ -24,7 +24,7 @@ beforeEach(function () {
     ];
     $this->createTables();
 
-    $this->snapshotRepository = new DynamoDbSnapshotRepository(
+    $this->snapshotRepository = new DynamoSnapshotRepository(
         $this->getDynamoDbClient(),
         new TimeStampIdGenerator(new Randomizer(), new MicroTimestampProvider()),
         new Marshaler(),

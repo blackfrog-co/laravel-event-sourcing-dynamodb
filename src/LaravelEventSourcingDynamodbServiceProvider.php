@@ -38,10 +38,6 @@ class LaravelEventSourcingDynamodbServiceProvider extends PackageServiceProvider
             )
         );
 
-        $dynamoDbClient = function (): DynamoDbClient {
-            return new DynamoDbClient(config('event-sourcing-dynamodb.dynamodb-client'));
-        };
-
         $this->app->when([
             DynamoStoredEventRepository::class,
             DynamoSnapshotRepository::class,
@@ -49,7 +45,11 @@ class LaravelEventSourcingDynamodbServiceProvider extends PackageServiceProvider
             TableManager::class,
         ])
             ->needs(DynamoDbClient::class)
-            ->give($dynamoDbClient);
+            ->give(function (): DynamoDbClient {
+                return new DynamoDbClient(
+                    config('event-sourcing-dynamodb.dynamodb-client')
+                );
+            });
     }
 
     public function configurePackage(Package $package): void

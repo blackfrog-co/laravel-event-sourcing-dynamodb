@@ -17,9 +17,6 @@ beforeAll(function () {
 });
 
 beforeEach(function () {
-    if (config('event-sourcing-dynamodb.read_consistency')) {
-        dump('read consistency mode.');
-    }
     $this->createTables();
 
     $this->storedEventRepository = app(DynamoStoredEventRepository::class);

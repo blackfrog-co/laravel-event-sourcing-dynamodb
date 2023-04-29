@@ -17,10 +17,10 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          coverage: none
+          coverage: pcov
 
       - name: Install composer dependencies
         uses: ramsey/composer-install@v2
 
       - name: Run PHPStan
-        run: ./vendor/bin/phpstan --error-format=github
+        run: ./vendor/bin/phpstan -v --error-format=github

@@ -47,12 +47,6 @@ class LaravelEventSourcingDynamodbServiceProvider extends PackageServiceProvider
         ])
             ->needs(DynamoDbClient::class)
             ->give(function (): DynamoDbClient {
-
-                dump(config(
-                    'event-sourcing-dynamodb.dynamodb-client',
-                    new Credentials('key', 'secret')
-                ));
-
                 return new DynamoDbClient(
                     config(
                         'event-sourcing-dynamodb.dynamodb-client',

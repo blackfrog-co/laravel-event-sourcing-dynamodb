@@ -17,7 +17,7 @@ return [
         ],
     ],
 
-    'read_consistency' => false,
+    'read_consistency' => (bool) env('DYNAMO_EVENTS_READ_CONSISTENCY', false),
 
     'stored-event-table' => 'stored_events',
 

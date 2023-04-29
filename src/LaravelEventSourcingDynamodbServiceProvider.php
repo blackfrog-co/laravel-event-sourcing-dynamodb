@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BlackFrog\LaravelEventSourcingDynamodb;
 
+use Aws\Credentials\Credentials;
 use Aws\DynamoDb\DynamoDbClient;
 use BlackFrog\LaravelEventSourcingDynamodb\Commands\CreateTables;
 use BlackFrog\LaravelEventSourcingDynamodb\IdGeneration\IdGenerator;
@@ -39,7 +40,11 @@ class LaravelEventSourcingDynamodbServiceProvider extends PackageServiceProvider
         );
 
         $dynamoDbClient = function (): DynamoDbClient {
-            return new DynamoDbClient(config('event-sourcing-dynamodb.dynamodb-client'));
+            return new DynamoDbClient(
+                config('event-sourcing-dynamodb.dynamodb-client', (
+                    new Credentials('key', 'secret'))
+                )
+            );
         };
 
         $this->app->when([

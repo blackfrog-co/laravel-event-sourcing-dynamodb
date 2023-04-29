@@ -24,3 +24,6 @@ jobs:
 
       - name: Run PHPStan
         run: ./vendor/bin/phpstan -v --error-format=github
+        env:
+          AWS_ACCESS_KEY_ID: fakeMyKeyId
+          AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey

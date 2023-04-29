@@ -24,6 +24,7 @@ class CreateTables extends Command
     {
         try {
             $this->info('Creating stored event table...');
+
             $this->tableManager->createTable(
                 config('event-sourcing-dynamodb.stored-event-table'),
                 config('event-sourcing-dynamodb.stored-event-table-definition'),
@@ -32,14 +33,17 @@ class CreateTables extends Command
             $this->comment('Stored event table created.');
 
             $this->info('Creating snapshot table...');
+
             $this->tableManager->createTable(
                 config('event-sourcing-dynamodb.snapshot-table'),
                 config('event-sourcing-dynamodb.snapshot-table-definition'),
                 $this->option('force')
             );
+
             $this->comment('Snapshot table created.');
 
             return self::SUCCESS;
+
         } catch (TableAlreadyExistsException $exception) {
             $this->error($exception->getMessage());
 

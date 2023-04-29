@@ -55,8 +55,12 @@ jobs:
 
       - name: Execute tests
         run: vendor/bin/pest --coverage --coverage-clover storage/coverage/coverage.xml
-
       - uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./storage/coverage/coverage.xml
+
+      - name: Execute tests (Read consistency)
+        run: vendor/bin/pest
+        env:
+          DYNAMO_EVENTS_READ_CONSISTENCY: true

@@ -11,6 +11,36 @@
 A DynamoDB driver for [`spatie/laravel-event-sourcing`](https://github.com/spatie/laravel-event-sourcing) allowing for a
 serverless approach to your event and snapshot data storage.
 
+**TODOs for first release:**
+
+- Review approach to handling event metadata, ensure its compatible.
+- Copy and modify any parts of the main package test suite that can give more end to end coverage.
+
+* [Features](#features)
+    + [Minor Differences](#minor-differences)
+    + [Requirements](#requirements)
+* [Should I use DynamoDB?](#should-i-use-dynamodb)
+* [How It Works](#how-it-works)
+    + [Events](#events)
+    + [Snapshots](#snapshots)
+    + [Read Consistency](#read-consistency)
+    + [Lazy Collections](#lazy-collections)
+* [Limitations](#limitations)
+    + [DynamoDB](#dynamodb)
+    + [Transactions](#transactions)
+    + [Event Ids](#event-ids)
+* [Getting Started](#getting-started)
+    + [Install](#install)
+    + [Configure](#configure)
+    + [Create DynamoDB Tables](#create-dynamodb-tables)
+    + [Update Spatie Laravel Event Sourcing Config](#update-spatie-laravel-event-sourcing-config)
+* [Testing](#testing)
+* [Local Development](#local-development)
+* [Future Roadmap Ideas](#future-roadmap-ideas)
+* [Changelog](#changelog)
+* [Credits](#credits)
+* [License](#license)
+
 ## Features
 
 - Provides a DynamoDB implementation for `StoredEventRepository` and `SnapshotRepository`.
@@ -31,11 +61,6 @@ serverless approach to your event and snapshot data storage.
 
 - 64bit PHP 8.2
 - `"spatie/laravel-event-sourcing": "^7.3.3"`,
-
-**TODOs for first release:**
-
-- Review approach to handling event metadata, ensure its compatible.
-- Copy and modify any parts of the main package test suite that can give more end to end coverage.
 
 ## Should I use DynamoDB?
 
